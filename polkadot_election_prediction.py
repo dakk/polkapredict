@@ -21,7 +21,9 @@ import json
 import time
 import argparse
 import sys
+import os
 from collections import defaultdict
+from datetime import datetime, timezone
 
 # ── Configuration ───────────────────────────────────────────────────────
 
@@ -975,6 +977,46 @@ def display_results(elected_candidates, validator_info, active_addresses, num_se
         print(f"  Dropped:           {len(dropped)}")
 
 
+# ── JSON Output ───────────────────────────────────────────────────
+
+def write_election_json(validator_info, mode):
+    """Write validator ranking data to data/election.json."""
+    sorted_vals = sorted(
+        validator_info.items(),
+        key=lambda x: x[1]["estimated_backing"],
+        reverse=True,
+    )
+    active_count = sum(1 for _, v in sorted_vals if v.get("is_active"))
+    waiting_count = sum(1 for _, v in sorted_vals if not v.get("is_active"))
+
+    validators = []
+    for rank, (addr, info) in enumerate(sorted_vals, 1):
+        validators.append({
+            "rank": rank,
+            "name": info["name"],
+            "address": addr,
+            "is_active": info.get("is_active", False),
+            "self_stake_dot": round(info["bonded_owner"] / DOT_DECIMALS, 2),
+            "nominator_backing_dot": round(info.get("nominator_backing", 0), 2),
+            "estimated_total_dot": round(info["estimated_backing"], 2),
+        })
+
+    output_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data", "election.json"
+    )
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    result = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "mode": mode,
+        "active_validators": active_count,
+        "waiting_validators": waiting_count,
+        "validators": validators,
+    }
+    with open(output_path, "w") as f:
+        json.dump(result, f, indent=2)
+    print(f"\nJSON written to {output_path}")
+
+
 # ── Main ───────────────────────────────────────────────────────────────
 
 def fetch_validator_names():
@@ -1077,6 +1119,7 @@ def main():
                 print(f"    Limited to {len(candidates)} waiting validators")
             validator_info = build_waiting_ranking(candidates)
             display_ranking(validator_info)
+            write_election_json(validator_info, "subscan")
         else:
             print(f"\n    Mode: Full Phragmen election (Subscan)")
             print(f"    Seats: {args.seats}")
@@ -1111,6 +1154,7 @@ def main():
             print(f"\n    Mode: Full ranking via Asset Hub RPC")
             validator_info = build_ranking_rpc(validator_names, args.rpc)
             display_ranking(validator_info)
+            write_election_json(validator_info, "rpc")
 
     elapsed = time.time() - start_time
     print(f"\n  Total time: {elapsed:.0f}s")

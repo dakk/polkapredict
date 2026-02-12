@@ -4,6 +4,8 @@
 import urllib.request
 import json
 import time
+import os
+from datetime import datetime, timezone
 
 API_URL = "https://polkadot.api.subscan.io/api/scan/staking/validators"
 PAGE_SIZE = 100
@@ -80,6 +82,27 @@ def main():
     non_zero_under_10k = [(n, a, d) for n, a, d in under_10k if d > 0]
     for i, (name, address, dot) in enumerate(non_zero_under_10k, 1):
         print(f"  {i:3d}. {name:<40s} {dot:>12,.2f} DOT  {address}")
+
+    # Write JSON output
+    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "selfstake.json")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    result = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "total_active_validators": total,
+        "zero_selfstake_count": len(zero_stake),
+        "under_10k_count": len(under_10k),
+        "zero_selfstake": [
+            {"name": n, "address": a, "self_stake_dot": d}
+            for n, a, d in zero_stake
+        ],
+        "under_10k": [
+            {"name": n, "address": a, "self_stake_dot": round(d, 2)}
+            for n, a, d in under_10k
+        ],
+    }
+    with open(output_path, "w") as f:
+        json.dump(result, f, indent=2)
+    print(f"\nJSON written to {output_path}")
 
 
 if __name__ == "__main__":
