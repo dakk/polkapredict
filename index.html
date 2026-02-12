@@ -280,7 +280,7 @@
   </div>
 
   <div class="tabs">
-    <button class="tab active" data-tab="election">Election Ranking</button>
+    <button class="tab active" data-tab="election">Waiting Validators Ranking</button>
     <button class="tab" data-tab="selfstake">Self-Stake Analysis</button>
   </div>
 
@@ -294,7 +294,6 @@
           <tr>
             <th data-sort="rank" data-type="num">Rank <span class="sort-arrow"></span></th>
             <th data-sort="name" data-type="str">Name <span class="sort-arrow"></span></th>
-            <th data-sort="is_active" data-type="str">Status <span class="sort-arrow"></span></th>
             <th data-sort="self_stake_dot" data-type="num" class="num">Self-Stake (DOT) <span class="sort-arrow"></span></th>
             <th data-sort="nominator_backing_dot" data-type="num" class="num">Nom. Backing (DOT) <span class="sort-arrow"></span></th>
             <th data-sort="estimated_total_dot" data-type="num" class="num">Total Backing (DOT) <span class="sort-arrow"></span></th>
@@ -496,13 +495,9 @@ function changePage(key, delta) {
 }
 
 function electionRow(r) {
-  const badge = r.is_active
-    ? '<span class="badge badge-active">Active</span>'
-    : '<span class="badge badge-waiting">Waiting</span>';
   return `<tr>
     <td class="num">${r.rank}</td>
     <td>${esc(r.name)}</td>
-    <td>${badge}</td>
     <td class="num">${fmt(r.self_stake_dot)}</td>
     <td class="num">${fmt(r.nominator_backing_dot)}</td>
     <td class="num">${fmt(r.estimated_total_dot)}</td>
@@ -559,7 +554,9 @@ async function loadData() {
         <div class="value" style="font-size:1.1rem">${electionData.mode.toUpperCase()}</div></div>
     `;
 
-    tables.election.rows = electionData.validators.map(v => ({ ...v }));
+    const waitingOnly = electionData.validators.filter(v => !v.is_active);
+    waitingOnly.forEach((v, i) => v.rank = i + 1);
+    tables.election.rows = waitingOnly;
     tables.election.filtered = [...tables.election.rows];
     renderTable('election');
   } catch (e) {
