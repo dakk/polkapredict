@@ -536,7 +536,7 @@ function esc(s) {
 async function loadData() {
   // Election data
   try {
-    const resp = await fetch('data/election.json');
+    const resp = await fetch('data/election.json', { cache: 'no-store' });
     if (!resp.ok) throw new Error(resp.status);
     electionData = await resp.json();
 
@@ -567,7 +567,7 @@ async function loadData() {
 
   // Self-stake data
   try {
-    const resp = await fetch('data/selfstake.json');
+    const resp = await fetch('data/selfstake.json', { cache: 'no-store' });
     if (!resp.ok) throw new Error(resp.status);
     selfstakeData = await resp.json();
 
