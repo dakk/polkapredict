@@ -27,15 +27,33 @@ from datetime import datetime, timezone
 
 # ── Configuration ───────────────────────────────────────────────────────
 
-API_BASE = "https://polkadot.api.subscan.io"
-ASSET_HUB_RPC = "wss://polkadot-asset-hub-rpc.polkadot.io"
-DOT_DECIMALS = 10_000_000_000  # 1 DOT = 10^10 planck
+CHAIN_CONFIG = {
+    "polkadot": {
+        "api_base": "https://polkadot.api.subscan.io",
+        "rpc": "wss://polkadot-asset-hub-rpc.polkadot.io",
+        "decimals": 10_000_000_000,  # 1 DOT = 10^10 planck
+        "token": "DOT",
+        "seats": 300,
+    },
+    "kusama": {
+        "api_base": "https://kusama.api.subscan.io",
+        "rpc": "wss://kusama-asset-hub-rpc.polkadot.io",
+        "decimals": 1_000_000_000_000,  # 1 KSM = 10^12 planck
+        "token": "KSM",
+        "seats": 1000,
+    },
+}
+
+API_BASE = CHAIN_CONFIG["polkadot"]["api_base"]
+ASSET_HUB_RPC = CHAIN_CONFIG["polkadot"]["rpc"]
+DOT_DECIMALS = CHAIN_CONFIG["polkadot"]["decimals"]
+TOKEN = CHAIN_CONFIG["polkadot"]["token"]
+DEFAULT_SEATS = CHAIN_CONFIG["polkadot"]["seats"]
 PAGE_SIZE = 100
-DEFAULT_SEATS = 300
 MAX_RETRIES = 5
 RETRY_DELAY = 5
 
-config = {"delay": 0.5}  # seconds between API calls
+config = {"delay": 0.5, "chain": "polkadot"}  # seconds between API calls
 
 
 # ── NPoS Algorithm (Sequential Phragmen) ───────────────────────────────
@@ -518,9 +536,9 @@ def lookup_single_rpc(address, validator_names, rpc_url):
     print(f"  {address}")
     print(f"{'=' * 70}")
     print(f"  Status:              {status}")
-    print(f"  Self-stake:          {self_stake / DOT_DECIMALS:>14,.0f} DOT")
-    print(f"  Nominator backing:   {nom_backing:>14,.0f} DOT")
-    print(f"  Estimated total:     {target_backing:>14,.0f} DOT")
+    print(f"  Self-stake:          {self_stake / DOT_DECIMALS:>14,.0f} {TOKEN}")
+    print(f"  Nominator backing:   {nom_backing:>14,.0f} {TOKEN}")
+    print(f"  Estimated total:     {target_backing:>14,.0f} {TOKEN}")
     print(f"  Nominators:          {nom_count:>14}")
 
     if target_rank:
@@ -530,11 +548,11 @@ def lookup_single_rpc(address, validator_names, rpc_url):
 
     if min_active_backing:
         gap = min_active_backing - target_backing
-        print(f"\n  Last active backing: {min_active_backing:>14,.0f} DOT")
+        print(f"\n  Last active backing: {min_active_backing:>14,.0f} {TOKEN}")
         if gap > 0:
-            print(f"  Gap to active set:   {gap:>14,.0f} DOT")
+            print(f"  Gap to active set:   {gap:>14,.0f} {TOKEN}")
         else:
-            print(f"  Above active min by: {-gap:>14,.0f} DOT")
+            print(f"  Above active min by: {-gap:>14,.0f} {TOKEN}")
 
     # Show nearby validators
     if target_rank and len(all_backings) > 1:
@@ -751,9 +769,9 @@ def display_ranking(validator_info):
         backings = [info["estimated_backing"] for _, info in waiting]
         print(f"\n--- Summary ---")
         print(f"  Total waiting validators: {len(waiting)}")
-        print(f"  Min estimated backing:  {min(backings):>14,.0f} DOT")
-        print(f"  Max estimated backing:  {max(backings):>14,.0f} DOT")
-        print(f"  Avg estimated backing:  {sum(backings) / len(backings):>14,.0f} DOT")
+        print(f"  Min estimated backing:  {min(backings):>14,.0f} {TOKEN}")
+        print(f"  Max estimated backing:  {max(backings):>14,.0f} {TOKEN}")
+        print(f"  Avg estimated backing:  {sum(backings) / len(backings):>14,.0f} {TOKEN}")
 
 
 # ── Full Election Mode (Phragmen) ─────────────────────────────────────
@@ -968,9 +986,9 @@ def display_results(elected_candidates, validator_info, active_addresses, num_se
     stakes = [c.backed_stake for c in elected_candidates]
     print(f"\n--- Summary ---")
     print(f"  Total seats:       {num_seats}")
-    print(f"  Min backed stake:  {min(stakes):>18,.2f} DOT")
-    print(f"  Max backed stake:  {max(stakes):>18,.2f} DOT")
-    print(f"  Avg backed stake:  {sum(stakes) / len(stakes):>18,.2f} DOT")
+    print(f"  Min backed stake:  {min(stakes):>18,.2f} {TOKEN}")
+    print(f"  Max backed stake:  {max(stakes):>18,.2f} {TOKEN}")
+    print(f"  Avg backed stake:  {sum(stakes) / len(stakes):>18,.2f} {TOKEN}")
     if newly_elected:
         print(f"  Newly elected:     {len(newly_elected)}")
     if dropped:
@@ -980,7 +998,7 @@ def display_results(elected_candidates, validator_info, active_addresses, num_se
 # ── JSON Output ───────────────────────────────────────────────────
 
 def write_election_json(validator_info, mode):
-    """Write validator ranking data to data/election.json."""
+    """Write validator ranking data to data/<chain>/election.json."""
     sorted_vals = sorted(
         validator_info.items(),
         key=lambda x: x[1]["estimated_backing"],
@@ -1001,12 +1019,15 @@ def write_election_json(validator_info, mode):
             "estimated_total_dot": round(info["estimated_backing"], 2),
         })
 
+    chain = config["chain"]
     output_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "data", "election.json"
+        os.path.dirname(os.path.abspath(__file__)), "data", chain, "election.json"
     )
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     result = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "chain": chain,
+        "token": TOKEN,
         "mode": mode,
         "active_validators": active_count,
         "waiting_validators": waiting_count,
@@ -1046,8 +1067,17 @@ def fetch_validator_names():
 
 
 def main():
+    global API_BASE, ASSET_HUB_RPC, DOT_DECIMALS, TOKEN, DEFAULT_SEATS
+
     parser = argparse.ArgumentParser(
-        description="Polkadot NPoS validator election prediction"
+        description="NPoS validator election prediction"
+    )
+    parser.add_argument(
+        "--chain",
+        type=str,
+        choices=list(CHAIN_CONFIG.keys()),
+        default="polkadot",
+        help="Chain to analyze (default: polkadot)",
     )
     parser.add_argument(
         "--address",
@@ -1058,8 +1088,8 @@ def main():
     parser.add_argument(
         "--rpc",
         type=str,
-        default=ASSET_HUB_RPC,
-        help=f"Asset Hub RPC endpoint (default: {ASSET_HUB_RPC})",
+        default="",
+        help="Asset Hub RPC endpoint (overrides chain default)",
     )
     parser.add_argument(
         "--use-subscan",
@@ -1070,8 +1100,8 @@ def main():
     parser.add_argument(
         "--seats",
         type=int,
-        default=DEFAULT_SEATS,
-        help=f"Seats for Phragmen election mode (default: {DEFAULT_SEATS})",
+        default=0,
+        help="Seats for Phragmen election mode (0 = chain default)",
     )
     parser.add_argument(
         "--include-active",
@@ -1093,9 +1123,18 @@ def main():
     )
     args = parser.parse_args()
 
+    # Apply chain config
+    chain_cfg = CHAIN_CONFIG[args.chain]
+    API_BASE = chain_cfg["api_base"]
+    ASSET_HUB_RPC = args.rpc or chain_cfg["rpc"]
+    DOT_DECIMALS = chain_cfg["decimals"]
+    TOKEN = chain_cfg["token"]
+    DEFAULT_SEATS = args.seats or chain_cfg["seats"]
     config["delay"] = args.delay
+    config["chain"] = args.chain
+
     start_time = time.time()
-    print("=== Polkadot NPoS Election Prediction ===")
+    print(f"=== {args.chain.capitalize()} NPoS Election Prediction ===")
     print()
 
     if args.use_subscan:
@@ -1122,7 +1161,7 @@ def main():
             write_election_json(validator_info, "subscan")
         else:
             print(f"\n    Mode: Full Phragmen election (Subscan)")
-            print(f"    Seats: {args.seats}")
+            print(f"    Seats: {DEFAULT_SEATS}")
             all_candidates = list(active_validators) + list(waiting)
             if args.max_validators > 0:
                 all_candidates = (
@@ -1139,7 +1178,7 @@ def main():
                 f"  {len(nominator_targets_map)} nominators + {self_count} "
                 f"self-stakes = {len(votelist)} vote entries"
             )
-            num_to_elect = min(args.seats, len(validator_info))
+            num_to_elect = min(DEFAULT_SEATS, len(validator_info))
             print(f"\n[4/4] Running Sequential Phragmen for {num_to_elect} seats...")
             nomlist, elected = seq_phragmen_with_equalise(votelist, num_to_elect)
             display_results(elected, validator_info, active_addresses, num_to_elect)
@@ -1149,10 +1188,10 @@ def main():
 
         if args.address:
             print(f"\n    Mode: Single validator lookup (RPC)")
-            lookup_single_rpc(args.address, validator_names, args.rpc)
+            lookup_single_rpc(args.address, validator_names, ASSET_HUB_RPC)
         else:
             print(f"\n    Mode: Full ranking via Asset Hub RPC")
-            validator_info = build_ranking_rpc(validator_names, args.rpc)
+            validator_info = build_ranking_rpc(validator_names, ASSET_HUB_RPC)
             display_ranking(validator_info)
             write_election_json(validator_info, "rpc")
 

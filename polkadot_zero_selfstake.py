@@ -1,16 +1,38 @@
 #!/usr/bin/env python3
-"""Count active Polkadot validators with zero self-stake using on-chain data."""
+"""Count active validators with zero self-stake using on-chain data."""
 
+import argparse
 import json
 import os
 from datetime import datetime, timezone
 
 from substrateinterface import SubstrateInterface
 
-RELAY_RPC = "wss://rpc.ibp.network/polkadot"
-ASSET_HUB_RPC = "wss://sys.ibp.network/asset-hub-polkadot"
-PEOPLE_RPC = "wss://sys.ibp.network/people-polkadot"
-DOT_DECIMALS = 10_000_000_000
+CHAIN_CONFIG = {
+    "polkadot": {
+        "relay_rpc": "wss://rpc.ibp.network/polkadot",
+        "asset_hub_rpc": "wss://sys.ibp.network/asset-hub-polkadot",
+        "people_rpc": "wss://sys.ibp.network/people-polkadot",
+        "decimals": 10_000_000_000,  # 1 DOT = 10^10 planck
+        "token": "DOT",
+        "threshold": 10_000,
+    },
+    "kusama": {
+        "relay_rpc": "wss://rpc.ibp.network/kusama",
+        "asset_hub_rpc": "wss://sys.ibp.network/asset-hub-kusama",
+        "people_rpc": "wss://sys.ibp.network/people-kusama",
+        "decimals": 1_000_000_000_000,  # 1 KSM = 10^12 planck
+        "token": "KSM",
+        "threshold": 10,
+    },
+}
+
+RELAY_RPC = CHAIN_CONFIG["polkadot"]["relay_rpc"]
+ASSET_HUB_RPC = CHAIN_CONFIG["polkadot"]["asset_hub_rpc"]
+PEOPLE_RPC = CHAIN_CONFIG["polkadot"]["people_rpc"]
+DOT_DECIMALS = CHAIN_CONFIG["polkadot"]["decimals"]
+TOKEN = CHAIN_CONFIG["polkadot"]["token"]
+THRESHOLD_AMOUNT = CHAIN_CONFIG["polkadot"]["threshold"]
 
 
 def get_active_validators():
@@ -89,6 +111,29 @@ def get_identities(addresses):
 
 
 def main():
+    global RELAY_RPC, ASSET_HUB_RPC, PEOPLE_RPC, DOT_DECIMALS, TOKEN, THRESHOLD_AMOUNT
+
+    parser = argparse.ArgumentParser(
+        description="Count active validators with zero self-stake"
+    )
+    parser.add_argument(
+        "--chain",
+        type=str,
+        choices=list(CHAIN_CONFIG.keys()),
+        default="polkadot",
+        help="Chain to analyze (default: polkadot)",
+    )
+    args = parser.parse_args()
+
+    chain_cfg = CHAIN_CONFIG[args.chain]
+    RELAY_RPC = chain_cfg["relay_rpc"]
+    ASSET_HUB_RPC = chain_cfg["asset_hub_rpc"]
+    PEOPLE_RPC = chain_cfg["people_rpc"]
+    DOT_DECIMALS = chain_cfg["decimals"]
+    TOKEN = chain_cfg["token"]
+    THRESHOLD_AMOUNT = chain_cfg["threshold"]
+
+    print(f"=== {args.chain.capitalize()} Self-Stake Analysis ===\n")
     print("Fetching active validator set from relay chain...")
     active_set = get_active_validators()
     print(f"Active validators: {len(active_set)}")
@@ -99,10 +144,10 @@ def main():
     print("Fetching identities from People chain...")
     names = get_identities(active_set)
 
-    THRESHOLD = 10_000 * DOT_DECIMALS
+    THRESHOLD = THRESHOLD_AMOUNT * DOT_DECIMALS
 
     zero_stake = []
-    under_10k = []
+    under_threshold = []
 
     for addr in active_set:
         own = overview[addr]
@@ -112,7 +157,7 @@ def main():
         if own == 0:
             zero_stake.append((name, addr, dot_amount))
         if own < THRESHOLD:
-            under_10k.append((name, addr, dot_amount))
+            under_threshold.append((name, addr, dot_amount))
 
     total = len(active_set)
     print(f"\n{'=' * 50}")
@@ -121,35 +166,38 @@ def main():
         f"Validators with self-stake == 0: {len(zero_stake)} ({len(zero_stake) / total * 100:.1f}%)"
     )
     print(
-        f"Validators with self-stake < 10k DOT: {len(under_10k)} ({len(under_10k) / total * 100:.1f}%)"
+        f"Validators with self-stake < {THRESHOLD_AMOUNT:,} {TOKEN}: {len(under_threshold)} ({len(under_threshold) / total * 100:.1f}%)"
     )
 
     print(f"\n--- Validators with 0 self-stake ---")
     for i, (name, address, _) in enumerate(zero_stake, 1):
         print(f"  {i:3d}. {name:<40s} {address}")
 
-    print(f"\n--- Validators with self-stake > 0 but < 10k DOT ---")
-    non_zero_under_10k = [(n, a, d) for n, a, d in under_10k if d > 0]
-    for i, (name, address, dot) in enumerate(non_zero_under_10k, 1):
-        print(f"  {i:3d}. {name:<40s} {dot:>12,.2f} DOT  {address}")
+    print(f"\n--- Validators with self-stake > 0 but < {THRESHOLD_AMOUNT:,} {TOKEN} ---")
+    non_zero_under = [(n, a, d) for n, a, d in under_threshold if d > 0]
+    for i, (name, address, dot) in enumerate(non_zero_under, 1):
+        print(f"  {i:3d}. {name:<40s} {dot:>12,.2f} {TOKEN}  {address}")
 
     # Write JSON output
     output_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "data", "selfstake.json"
+        os.path.dirname(os.path.abspath(__file__)), "data", args.chain, "selfstake.json"
     )
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     result = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "chain": args.chain,
+        "token": TOKEN,
+        "threshold": THRESHOLD_AMOUNT,
         "active_era": overview.get("_era"),
         "total_active_validators": total,
         "zero_selfstake_count": len(zero_stake),
-        "under_10k_count": len(under_10k),
+        "under_threshold_count": len(under_threshold),
         "zero_selfstake": [
             {"name": n, "address": a, "self_stake_dot": d} for n, a, d in zero_stake
         ],
-        "under_10k": [
+        "under_threshold": [
             {"name": n, "address": a, "self_stake_dot": round(d, 2)}
-            for n, a, d in under_10k
+            for n, a, d in under_threshold
         ],
     }
     with open(output_path, "w") as f:
