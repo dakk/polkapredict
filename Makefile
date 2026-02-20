@@ -3,11 +3,11 @@ PYTHON := $(VENV)/bin/python
 
 .PHONY: all polkadot kusama selfstake election selfstake-polkadot selfstake-kusama election-polkadot election-kusama serve clean
 
-all: polkadot kusama
+all: polkadot
 
 polkadot: selfstake-polkadot election-polkadot
 
-kusama: selfstake-kusama election-kusama
+kusama: election-kusama
 
 selfstake: selfstake-polkadot
 

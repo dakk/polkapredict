@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PolkaPredict — Polkadot Validator Analytics</title>
+<title>PolkaPredict — Validator Analytics</title>
 <style>
   :root {
     --bg: #1a1a2e;
@@ -257,6 +257,31 @@
     color: var(--text);
   }
 
+  /* Chain Switcher */
+  .chain-switcher {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .chain-btn {
+    padding: 6px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .chain-btn:hover { border-color: var(--accent); color: var(--text); }
+  .chain-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
   @media (max-width: 768px) {
     .container { padding: 12px; }
     header h1 { font-size: 1.3rem; }
@@ -270,7 +295,11 @@
 <div class="container">
   <header>
     <h1>PolkaPredict</h1>
-    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 2px;">Polkadot Validator Analytics</p>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 2px;" id="subtitle">Polkadot Validator Analytics</p>
+    <div class="chain-switcher">
+      <button class="chain-btn active" data-chain="polkadot">Polkadot</button>
+      <button class="chain-btn" data-chain="kusama">Kusama</button>
+    </div>
     <p class="updated" id="updated-election"></p>
     <p class="updated" id="updated-selfstake"></p>
   </header>
@@ -294,9 +323,9 @@
           <tr>
             <th data-sort="rank" data-type="num">Rank <span class="sort-arrow"></span></th>
             <th data-sort="name" data-type="str">Name <span class="sort-arrow"></span></th>
-            <th data-sort="self_stake_dot" data-type="num" class="num">Self-Stake (DOT) <span class="sort-arrow"></span></th>
-            <th data-sort="nominator_backing_dot" data-type="num" class="num">Nom. Backing (DOT) <span class="sort-arrow"></span></th>
-            <th data-sort="estimated_total_dot" data-type="num" class="num">Total Backing (DOT) <span class="sort-arrow"></span></th>
+            <th data-sort="self_stake_dot" data-type="num" class="num">Self-Stake (<span class="token-label">DOT</span>) <span class="sort-arrow"></span></th>
+            <th data-sort="nominator_backing_dot" data-type="num" class="num">Nom. Backing (<span class="token-label">DOT</span>) <span class="sort-arrow"></span></th>
+            <th data-sort="estimated_total_dot" data-type="num" class="num">Total Backing (<span class="token-label">DOT</span>) <span class="sort-arrow"></span></th>
             <th>Address</th>
           </tr>
         </thead>
@@ -326,14 +355,14 @@
     </div>
     <div class="pagination" id="zero-pagination"></div>
 
-    <div class="section-title" style="margin-top: 32px;">Under 10k DOT Self-Stake (non-zero)</div>
+    <div class="section-title" style="margin-top: 32px;" id="under-threshold-title">Under 10k DOT Self-Stake (non-zero)</div>
     <div class="table-wrap">
       <table id="under10k-table">
         <thead>
           <tr>
             <th data-sort="idx" data-type="num"># <span class="sort-arrow"></span></th>
             <th data-sort="name" data-type="str">Name <span class="sort-arrow"></span></th>
-            <th data-sort="self_stake_dot" data-type="num" class="num">Self-Stake (DOT) <span class="sort-arrow"></span></th>
+            <th data-sort="self_stake_dot" data-type="num" class="num">Self-Stake (<span class="token-label">DOT</span>) <span class="sort-arrow"></span></th>
             <th>Address</th>
           </tr>
         </thead>
@@ -348,6 +377,12 @@
 const PAGE_SIZE = 50;
 let electionData = null;
 let selfstakeData = null;
+let currentChain = 'polkadot';
+
+const CHAIN_INFO = {
+  polkadot: { token: 'DOT', name: 'Polkadot', threshold: '10k', thresholdVal: 10000, hasSelfstake: true },
+  kusama:   { token: 'KSM', name: 'Kusama',   threshold: '10',  thresholdVal: 10,    hasSelfstake: false },
+};
 
 // State per table
 const tables = {
@@ -389,6 +424,42 @@ function formatTimestamp(iso) {
 function showError(containerId, msg) {
   document.getElementById(containerId).innerHTML =
     `<div class="error-box"><h3>Data Not Available</h3><p>${msg}</p></div>`;
+}
+
+// ── Chain Switcher ─────────────────────────────────────────────────
+
+document.querySelectorAll('.chain-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const chain = btn.dataset.chain;
+    if (chain === currentChain) return;
+    currentChain = chain;
+    document.querySelectorAll('.chain-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    window.location.hash = chain;
+    updateChainUI();
+    loadData();
+  });
+});
+
+function updateChainUI() {
+  const info = CHAIN_INFO[currentChain];
+  document.getElementById('subtitle').textContent = info.name + ' Validator Analytics';
+  document.querySelectorAll('.token-label').forEach(el => el.textContent = info.token);
+  document.getElementById('under-threshold-title').textContent =
+    `Under ${info.threshold} ${info.token} Self-Stake (non-zero)`;
+
+  // Hide selfstake tab for chains that don't support it
+  const selfstakeTab = document.querySelector('.tab[data-tab="selfstake"]');
+  selfstakeTab.style.display = info.hasSelfstake ? '' : 'none';
+
+  // If selfstake tab is active but hidden, switch to election
+  if (!info.hasSelfstake && selfstakeTab.classList.contains('active')) {
+    selfstakeTab.classList.remove('active');
+    document.getElementById('tab-selfstake').classList.remove('active');
+    const electionTab = document.querySelector('.tab[data-tab="election"]');
+    electionTab.classList.add('active');
+    document.getElementById('tab-election').classList.add('active');
+  }
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────
@@ -534,9 +605,29 @@ function esc(s) {
 // ── Data Loading ───────────────────────────────────────────────────
 
 async function loadData() {
+  const chain = currentChain;
+  const info = CHAIN_INFO[chain];
+
+  // Reset tables
+  for (const state of Object.values(tables)) {
+    state.rows = [];
+    state.filtered = [];
+    state.page = 0;
+  }
+
+  // Clear previous data
+  document.getElementById('election-error').innerHTML = '';
+  document.getElementById('selfstake-error').innerHTML = '';
+  document.getElementById('election-stats').innerHTML = '';
+  document.getElementById('selfstake-stats').innerHTML = '';
+  document.getElementById('updated-election').textContent = '';
+  document.getElementById('updated-selfstake').textContent = '';
+  document.querySelectorAll('table tbody').forEach(tb => tb.innerHTML = '');
+  document.querySelectorAll('.pagination').forEach(p => p.innerHTML = '');
+
   // Election data
   try {
-    const resp = await fetch('data/election.json', { cache: 'no-store' });
+    const resp = await fetch(`data/${chain}/election.json`, { cache: 'no-store' });
     if (!resp.ok) throw new Error(resp.status);
     electionData = await resp.json();
 
@@ -561,30 +652,36 @@ async function loadData() {
     renderTable('election');
   } catch (e) {
     showError('election-error',
-      'Could not load <code>data/election.json</code>. Run:<br><br>' +
-      '<code>python polkadot_election_prediction.py</code>');
+      `Could not load <code>data/${chain}/election.json</code>. Run:<br><br>` +
+      `<code>python polkadot_election_prediction.py --chain ${chain}</code>`);
   }
 
-  // Self-stake data
+  // Self-stake data (skip for chains without selfstake analysis)
+  if (!info.hasSelfstake) return;
   try {
-    const resp = await fetch('data/selfstake.json', { cache: 'no-store' });
+    const resp = await fetch(`data/${chain}/selfstake.json`, { cache: 'no-store' });
     if (!resp.ok) throw new Error(resp.status);
     selfstakeData = await resp.json();
+
+    const token = selfstakeData.token || info.token;
+    const threshold = selfstakeData.threshold || info.thresholdVal;
+    const thresholdLabel = threshold >= 1000 ? (threshold / 1000) + 'k' : threshold;
 
     document.getElementById('updated-selfstake').textContent =
       'Self-stake data: ' + formatTimestamp(selfstakeData.generated_at);
 
     const total = selfstakeData.total_active_validators;
     const zeroPct = (selfstakeData.zero_selfstake_count / total * 100).toFixed(1);
-    const u10kPct = (selfstakeData.under_10k_count / total * 100).toFixed(1);
+    const underCount = selfstakeData.under_threshold_count ?? selfstakeData.under_10k_count;
+    const underPct = (underCount / total * 100).toFixed(1);
 
     document.getElementById('selfstake-stats').innerHTML = `
       <div class="stat-card"><div class="label">Active Validators</div>
         <div class="value green">${fmt(total)}</div></div>
       <div class="stat-card"><div class="label">Zero Self-Stake</div>
         <div class="value red">${selfstakeData.zero_selfstake_count} (${zeroPct}%)</div></div>
-      <div class="stat-card"><div class="label">Under 10k DOT</div>
-        <div class="value amber">${selfstakeData.under_10k_count} (${u10kPct}%)</div></div>
+      <div class="stat-card"><div class="label">Under ${thresholdLabel} ${token}</div>
+        <div class="value amber">${underCount} (${underPct}%)</div></div>
     `;
 
     tables.zero.rows = selfstakeData.zero_selfstake.map((v, i) => ({
@@ -593,19 +690,30 @@ async function loadData() {
     tables.zero.filtered = [...tables.zero.rows];
     renderTable('zero');
 
-    const nonZeroUnder10k = selfstakeData.under_10k.filter(v => v.self_stake_dot > 0);
-    tables.under10k.rows = nonZeroUnder10k.map((v, i) => ({
+    const underList = selfstakeData.under_threshold || selfstakeData.under_10k;
+    const nonZeroUnder = underList.filter(v => v.self_stake_dot > 0);
+    tables.under10k.rows = nonZeroUnder.map((v, i) => ({
       idx: i + 1, name: v.name, address: v.address, self_stake_dot: v.self_stake_dot,
     }));
     tables.under10k.filtered = [...tables.under10k.rows];
     renderTable('under10k');
   } catch (e) {
     showError('selfstake-error',
-      'Could not load <code>data/selfstake.json</code>. Run:<br><br>' +
-      '<code>python polkadot_zero_selfstake.py</code>');
+      `Could not load <code>data/${chain}/selfstake.json</code>. Run:<br><br>` +
+      `<code>python polkadot_zero_selfstake.py --chain ${chain}</code>`);
   }
 }
 
+// ── Init ───────────────────────────────────────────────────────────
+
+// Check URL hash for chain
+if (window.location.hash === '#kusama') {
+  currentChain = 'kusama';
+  document.querySelectorAll('.chain-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.chain === 'kusama');
+  });
+}
+updateChainUI();
 loadData();
 </script>
 </body>
