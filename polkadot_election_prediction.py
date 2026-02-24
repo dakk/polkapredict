@@ -20,7 +20,6 @@ import urllib.error
 import json
 import time
 import argparse
-import sys
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -31,6 +30,7 @@ CHAIN_CONFIG = {
     "polkadot": {
         "api_base": "https://polkadot.api.subscan.io",
         "rpc": "wss://polkadot-asset-hub-rpc.polkadot.io",
+        "people_rpc": "wss://polkadot-people-rpc.polkadot.io",
         "decimals": 10_000_000_000,  # 1 DOT = 10^10 planck
         "token": "DOT",
         "seats": 300,
@@ -38,6 +38,7 @@ CHAIN_CONFIG = {
     "kusama": {
         "api_base": "https://kusama.api.subscan.io",
         "rpc": "wss://kusama-asset-hub-rpc.polkadot.io",
+        "people_rpc": "wss://kusama-people-rpc.polkadot.io",
         "decimals": 1_000_000_000_000,  # 1 KSM = 10^12 planck
         "token": "KSM",
         "seats": 1000,
@@ -46,6 +47,7 @@ CHAIN_CONFIG = {
 
 API_BASE = CHAIN_CONFIG["polkadot"]["api_base"]
 ASSET_HUB_RPC = CHAIN_CONFIG["polkadot"]["rpc"]
+PEOPLE_RPC = CHAIN_CONFIG["polkadot"]["people_rpc"]
 DOT_DECIMALS = CHAIN_CONFIG["polkadot"]["decimals"]
 TOKEN = CHAIN_CONFIG["polkadot"]["token"]
 DEFAULT_SEATS = CHAIN_CONFIG["polkadot"]["seats"]
@@ -1066,8 +1068,62 @@ def fetch_validator_names():
     return names, active, waiting
 
 
+def fetch_identities_people_chain(people_rpc_url):
+    """Fetch all on-chain identities from the People parachain via RPC.
+
+    Queries Identity.IdentityOf for direct identities and Identity.SuperOf
+    for sub-identities. Returns dict of address -> display_name.
+    """
+    print("[1/3] Fetching identities from People chain...")
+    substrate, head = _rpc_connect(people_rpc_url)
+    substrate.close()
+
+    # Fetch all direct identities
+    print("  Fetching direct identities...")
+    identities = {}
+    count = 0
+    start = time.time()
+    for account, identity in _rpc_query_map_with_retry(
+        people_rpc_url, head, "Identity", "IdentityOf"
+    ):
+        info = identity.value.get("info", {})
+        display = info.get("display", {})
+        if isinstance(display, dict) and "Raw" in display:
+            identities[account] = display["Raw"]
+        count += 1
+        if count % 1000 == 0:
+            elapsed = time.time() - start
+            print(f"    {count} identities ({elapsed:.0f}s)...")
+    elapsed = time.time() - start
+    print(f"    {count} identities fetched in {elapsed:.0f}s")
+
+    # Fetch all sub-identities (maps child address -> parent address + sub name)
+    print("  Fetching sub-identities...")
+    count = 0
+    start = time.time()
+    for account, super_info in _rpc_query_map_with_retry(
+        people_rpc_url, head, "Identity", "SuperOf"
+    ):
+        parent_addr, sub_data = super_info.value
+        parent_name = identities.get(parent_addr, "")
+        sub_name = ""
+        if isinstance(sub_data, dict) and "Raw" in sub_data:
+            sub_name = sub_data["Raw"]
+        if parent_name:
+            identities[account] = f"{parent_name}:{sub_name}" if sub_name else parent_name
+        count += 1
+        if count % 1000 == 0:
+            elapsed = time.time() - start
+            print(f"    {count} sub-identities ({elapsed:.0f}s)...")
+    elapsed = time.time() - start
+    print(f"    {count} sub-identities fetched in {elapsed:.0f}s")
+    print(f"  Total named accounts: {len(identities)}")
+
+    return identities
+
+
 def main():
-    global API_BASE, ASSET_HUB_RPC, DOT_DECIMALS, TOKEN, DEFAULT_SEATS
+    global API_BASE, ASSET_HUB_RPC, PEOPLE_RPC, DOT_DECIMALS, TOKEN, DEFAULT_SEATS
 
     parser = argparse.ArgumentParser(
         description="NPoS validator election prediction"
@@ -1127,6 +1183,7 @@ def main():
     chain_cfg = CHAIN_CONFIG[args.chain]
     API_BASE = chain_cfg["api_base"]
     ASSET_HUB_RPC = args.rpc or chain_cfg["rpc"]
+    PEOPLE_RPC = chain_cfg["people_rpc"]
     DOT_DECIMALS = chain_cfg["decimals"]
     TOKEN = chain_cfg["token"]
     DEFAULT_SEATS = args.seats or chain_cfg["seats"]
@@ -1184,7 +1241,7 @@ def main():
             display_results(elected, validator_info, active_addresses, num_to_elect)
     else:
         # ── RPC mode (default, faster) ──
-        validator_names, _, _ = fetch_validator_names()
+        validator_names = fetch_identities_people_chain(PEOPLE_RPC)
 
         if args.address:
             print(f"\n    Mode: Single validator lookup (RPC)")
