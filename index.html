@@ -249,6 +249,59 @@
     font-size: 0.85rem;
   }
 
+  /* Buckets */
+  .buckets-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 24px;
+    margin-bottom: 24px;
+  }
+  .buckets-card .buckets-title {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+  .bucket-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .bucket-label {
+    width: 80px;
+    text-align: right;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .bucket-bar-wrap {
+    flex: 1;
+    height: 18px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bucket-bar {
+    height: 100%;
+    border-radius: 4px;
+    min-width: 2px;
+    transition: width 0.4s ease;
+  }
+  .bucket-count {
+    width: 110px;
+    text-align: right;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+  .bucket-pct {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
   /* Sub-section headers */
   .section-title {
     font-size: 1rem;
@@ -339,6 +392,7 @@
   <div class="tab-content active" id="tab-selfstake">
     <div id="selfstake-error"></div>
     <div class="stats" id="selfstake-stats"></div>
+    <div id="selfstake-buckets"></div>
 
     <div class="section-title">Zero Self-Stake Validators</div>
     <div class="table-wrap">
@@ -602,6 +656,67 @@ function esc(s) {
   return d.innerHTML;
 }
 
+// ── Buckets ────────────────────────────────────────────────────────
+
+function renderBuckets(selfstakeData, info) {
+  const container = document.getElementById('selfstake-buckets');
+  const total = selfstakeData.total_active_validators;
+  const threshold = selfstakeData.threshold || info.thresholdVal;
+  const token = selfstakeData.token || info.token;
+  const underList = selfstakeData.under_threshold || selfstakeData.under_10k;
+
+  // Define bucket boundaries as fractions of threshold
+  const cuts = [0, 0.1, 0.25, 0.5, 0.75, 1.0]; // yields 0, 1k, 2.5k, 5k, 7.5k, 10k for threshold=10000
+  const buckets = [];
+
+  // Bucket: exactly 0
+  const zeroCount = selfstakeData.zero_selfstake_count;
+  buckets.push({ label: '0', count: zeroCount, color: 'var(--red)' });
+
+  // Intermediate buckets from under_threshold (non-zero, below threshold)
+  const colors = ['var(--amber)', '#f59e0b', '#d97706', '#b45309', '#92400e'];
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const lo = cuts[i] * threshold;
+    const hi = cuts[i + 1] * threshold;
+    const count = underList.filter(v => v.self_stake_dot > lo && v.self_stake_dot <= hi).length;
+    const loLabel = fmtBucketVal(lo, threshold);
+    const hiLabel = fmtBucketVal(hi, threshold);
+    buckets.push({ label: `${loLabel}-${hiLabel}`, count, color: colors[i] || 'var(--amber)' });
+  }
+
+  // Bucket: >= threshold
+  const aboveCount = total - (selfstakeData.under_threshold_count ?? selfstakeData.under_10k_count ?? underList.length);
+  buckets.push({ label: `>=${fmtBucketVal(threshold, threshold)}`, count: aboveCount, color: 'var(--green)' });
+
+  const maxCount = Math.max(...buckets.map(b => b.count));
+  const thresholdLabel = fmtBucketVal(threshold, threshold);
+
+  container.innerHTML = `
+    <div class="buckets-card">
+      <div class="buckets-title">Self-Stake Distribution (<=${thresholdLabel} ${token})</div>
+      ${buckets.map(b => {
+        const pct = (b.count / total * 100).toFixed(2);
+        const barW = maxCount > 0 ? (b.count / maxCount * 100) : 0;
+        return `<div class="bucket-row">
+          <span class="bucket-label">${b.label}</span>
+          <div class="bucket-bar-wrap">
+            <div class="bucket-bar" style="width:${barW}%;background:${b.color}"></div>
+          </div>
+          <span class="bucket-count">${b.count} <span class="bucket-pct">(${pct}%)</span></span>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function fmtBucketVal(v) {
+  if (v === 0) return '0';
+  if (v >= 1000) {
+    const k = v / 1000;
+    return (k % 1 === 0 ? k : k.toFixed(1)) + 'k';
+  }
+  return v % 1 === 0 ? v.toString() : v.toFixed(1);
+}
+
 // ── Data Loading ───────────────────────────────────────────────────
 
 async function loadData() {
@@ -620,6 +735,7 @@ async function loadData() {
   document.getElementById('selfstake-error').innerHTML = '';
   document.getElementById('election-stats').innerHTML = '';
   document.getElementById('selfstake-stats').innerHTML = '';
+  document.getElementById('selfstake-buckets').innerHTML = '';
   document.getElementById('updated-election').textContent = '';
   document.getElementById('updated-selfstake').textContent = '';
   document.querySelectorAll('table tbody').forEach(tb => tb.innerHTML = '');
@@ -683,6 +799,8 @@ async function loadData() {
       <div class="stat-card"><div class="label">Under ${thresholdLabel} ${token}</div>
         <div class="value amber">${underCount} (${underPct}%)</div></div>
     `;
+
+    renderBuckets(selfstakeData, info);
 
     tables.zero.rows = selfstakeData.zero_selfstake.map((v, i) => ({
       idx: i + 1, name: v.name, address: v.address,
