@@ -197,18 +197,18 @@
     },
     {
       "date": "2026-03-03",
-      "generated_at": "2026-03-03T06:40:18.890874+00:00",
+      "generated_at": "2026-03-03T09:19:50.880724+00:00",
       "total_active_validators": 600,
       "zero_selfstake_count": 438,
       "under_threshold_count": 521,
       "buckets": {
         "zero": 438,
+        "above_10k": 79,
         "0_to_1k": 56,
         "1k_to_2500": 9,
         "2500_to_5k": 5,
         "5k_to_7500": 7,
-        "7500_to_10k": 6,
-        "above_10k": 79
+        "7500_to_10k": 6
       }
     }
   ]

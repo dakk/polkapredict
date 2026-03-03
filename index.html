@@ -441,6 +441,22 @@
       </table>
     </div>
     <div class="pagination" id="under10k-pagination"></div>
+
+    <div class="section-title" style="margin-top: 32px;" id="above-threshold-title">Above 10k DOT Self-Stake</div>
+    <div class="table-wrap">
+      <table id="above10k-table">
+        <thead>
+          <tr>
+            <th data-sort="idx" data-type="num"># <span class="sort-arrow"></span></th>
+            <th data-sort="name" data-type="str">Name <span class="sort-arrow"></span></th>
+            <th data-sort="self_stake_dot" data-type="num" class="num">Self-Stake (<span class="token-label">DOT</span>) <span class="sort-arrow"></span></th>
+            <th>Address</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="above10k-pagination"></div>
   </div>
 </div>
 
@@ -460,6 +476,7 @@ const tables = {
   election:  { rows: [], filtered: [], sortCol: 'rank', sortAsc: true, page: 0 },
   zero:      { rows: [], filtered: [], sortCol: 'idx', sortAsc: true, page: 0 },
   under10k:  { rows: [], filtered: [], sortCol: 'self_stake_dot', sortAsc: false, page: 0 },
+  above10k:  { rows: [], filtered: [], sortCol: 'self_stake_dot', sortAsc: false, page: 0 },
 };
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -518,6 +535,8 @@ function updateChainUI() {
   document.querySelectorAll('.token-label').forEach(el => el.textContent = info.token);
   document.getElementById('under-threshold-title').textContent =
     `Under ${info.threshold} ${info.token} Self-Stake (non-zero)`;
+  document.getElementById('above-threshold-title').textContent =
+    `Above ${info.threshold} ${info.token} Self-Stake`;
 
   // Hide selfstake tab for chains that don't support it
   const selfstakeTab = document.querySelector('.tab[data-tab="selfstake"]');
@@ -607,7 +626,7 @@ function renderTable(key) {
   tbody.innerHTML = pageRows.map(r => {
     if (key === 'election') return electionRow(r);
     if (key === 'zero') return zeroRow(r);
-    return under10kRow(r);
+    return stakeRow(r);
   }).join('');
 
   // Update sort arrows
@@ -657,7 +676,7 @@ function zeroRow(r) {
   </tr>`;
 }
 
-function under10kRow(r) {
+function stakeRow(r) {
   return `<tr>
     <td class="num">${r.idx}</td>
     <td>${esc(r.name)}</td>
@@ -902,14 +921,18 @@ async function loadData() {
     const zeroPct = (selfstakeData.zero_selfstake_count / total * 100).toFixed(1);
     const underCount = selfstakeData.under_threshold_count ?? selfstakeData.under_10k_count;
     const underPct = (underCount / total * 100).toFixed(1);
+    const aboveCount = selfstakeData.above_threshold_count ?? (total - underCount);
+    const abovePct = (aboveCount / total * 100).toFixed(1);
 
     document.getElementById('selfstake-stats').innerHTML = `
       <div class="stat-card"><div class="label">Active Validators</div>
-        <div class="value green">${fmt(total)}</div></div>
+        <div class="value pink">${fmt(total)}</div></div>
       <div class="stat-card"><div class="label">Zero Self-Stake</div>
         <div class="value red">${selfstakeData.zero_selfstake_count} (${zeroPct}%)</div></div>
       <div class="stat-card"><div class="label">Under ${thresholdLabel} ${token}</div>
         <div class="value amber">${underCount} (${underPct}%)</div></div>
+      <div class="stat-card"><div class="label">Above ${thresholdLabel} ${token}</div>
+        <div class="value green">${aboveCount} (${abovePct}%)</div></div>
     `;
 
     renderBuckets(selfstakeData, info);
@@ -938,6 +961,13 @@ async function loadData() {
     }));
     tables.under10k.filtered = [...tables.under10k.rows];
     renderTable('under10k');
+
+    const aboveList = selfstakeData.above_threshold || [];
+    tables.above10k.rows = aboveList.map((v, i) => ({
+      idx: i + 1, name: v.name, address: v.address, self_stake_dot: v.self_stake_dot,
+    }));
+    tables.above10k.filtered = [...tables.above10k.rows];
+    sortAndRender('above10k');
   } catch (e) {
     showError('selfstake-error',
       `Could not load <code>data/${chain}/selfstake.json</code>. Run:<br><br>` +

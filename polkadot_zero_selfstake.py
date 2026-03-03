@@ -226,6 +226,7 @@ def main():
 
     zero_stake = []
     under_threshold = []
+    above_threshold = []
 
     for addr in active_set:
         own = overview[addr]
@@ -236,6 +237,8 @@ def main():
             zero_stake.append((name, addr, dot_amount))
         if own < THRESHOLD:
             under_threshold.append((name, addr, dot_amount))
+        else:
+            above_threshold.append((name, addr, dot_amount))
 
     total = len(active_set)
     print(f"\n{'=' * 50}")
@@ -276,6 +279,11 @@ def main():
         "under_threshold": [
             {"name": n, "address": a, "self_stake_dot": round(d, 2)}
             for n, a, d in under_threshold
+        ],
+        "above_threshold_count": len(above_threshold),
+        "above_threshold": [
+            {"name": n, "address": a, "self_stake_dot": round(d, 2)}
+            for n, a, d in above_threshold
         ],
     }
     with open(output_path, "w") as f:
