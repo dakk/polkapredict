@@ -110,6 +110,84 @@ def get_identities(addresses):
     return names
 
 
+def compute_history_buckets(under_list, total, under_count, threshold):
+    """Compute bucket distribution from the under-threshold list."""
+    cuts = [0, 0.1, 0.25, 0.5, 0.75, 1.0]
+    boundaries = [c * threshold for c in cuts]
+    bucket_keys = ["0_to_1k", "1k_to_2500", "2500_to_5k", "5k_to_7500", "7500_to_10k"]
+
+    buckets = {
+        "zero": 0,
+        "above_10k": total - under_count,
+    }
+    for key in bucket_keys:
+        buckets[key] = 0
+
+    for v in under_list:
+        s = v["self_stake_dot"]
+        if s == 0:
+            buckets["zero"] += 1
+        else:
+            for i in range(len(boundaries) - 1):
+                if s <= boundaries[i + 1]:
+                    buckets[bucket_keys[i]] += 1
+                    break
+
+    return buckets
+
+
+def update_history(result, chain):
+    """Append today's data point to the history file."""
+    history_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "data", chain, "selfstake_history.json",
+    )
+
+    if os.path.exists(history_path):
+        with open(history_path) as f:
+            history = json.load(f)
+    else:
+        history = {
+            "chain": chain,
+            "token": result.get("token", "DOT"),
+            "threshold": result.get("threshold", 10000),
+            "data": [],
+        }
+
+    date = result["generated_at"][:10]
+    under_list = result.get("under_threshold", result.get("under_10k", []))
+    under_count = result.get(
+        "under_threshold_count",
+        result.get("under_10k_count", len(under_list)),
+    )
+    threshold = result.get("threshold", 10000)
+
+    entry = {
+        "date": date,
+        "generated_at": result["generated_at"],
+        "total_active_validators": result["total_active_validators"],
+        "zero_selfstake_count": result["zero_selfstake_count"],
+        "under_threshold_count": under_count,
+        "buckets": compute_history_buckets(
+            under_list, result["total_active_validators"], under_count, threshold,
+        ),
+    }
+
+    # Replace existing entry for same date, or append
+    replaced = False
+    for i, existing in enumerate(history["data"]):
+        if existing["date"] == date:
+            history["data"][i] = entry
+            replaced = True
+            break
+    if not replaced:
+        history["data"].append(entry)
+
+    with open(history_path, "w") as f:
+        json.dump(history, f, indent=2)
+    print(f"History updated: {history_path} ({len(history['data'])} data points)")
+
+
 def main():
     global RELAY_RPC, ASSET_HUB_RPC, PEOPLE_RPC, DOT_DECIMALS, TOKEN, THRESHOLD_AMOUNT
 
@@ -203,6 +281,8 @@ def main():
     with open(output_path, "w") as f:
         json.dump(result, f, indent=2)
     print(f"\nJSON written to {output_path}")
+
+    update_history(result, args.chain)
 
 
 if __name__ == "__main__":

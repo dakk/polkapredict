@@ -1,0 +1,215 @@
+{
+  "chain": "polkadot",
+  "token": "DOT",
+  "threshold": 10000,
+  "data": [
+    {
+      "date": "2026-02-12",
+      "generated_at": "2026-02-12T18:36:39.689678+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 490,
+      "under_threshold_count": 563,
+      "buckets": {
+        "zero": 490,
+        "0_to_1k": 41,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 9,
+        "7500_to_10k": 10,
+        "above_10k": 37
+      }
+    },
+    {
+      "date": "2026-02-13",
+      "generated_at": "2026-02-13T11:54:37.418998+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 490,
+      "under_threshold_count": 563,
+      "buckets": {
+        "zero": 490,
+        "0_to_1k": 42,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 9,
+        "7500_to_10k": 9,
+        "above_10k": 37
+      }
+    },
+    {
+      "date": "2026-02-17",
+      "generated_at": "2026-02-17T16:11:57.805160+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 489,
+      "under_threshold_count": 561,
+      "buckets": {
+        "zero": 489,
+        "0_to_1k": 41,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 10,
+        "7500_to_10k": 8,
+        "above_10k": 39
+      }
+    },
+    {
+      "date": "2026-02-18",
+      "generated_at": "2026-02-18T07:37:53.714474+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 486,
+      "under_threshold_count": 558,
+      "buckets": {
+        "zero": 486,
+        "0_to_1k": 43,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 10,
+        "7500_to_10k": 6,
+        "above_10k": 42
+      }
+    },
+    {
+      "date": "2026-02-19",
+      "generated_at": "2026-02-19T16:33:45.388355+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 485,
+      "under_threshold_count": 558,
+      "buckets": {
+        "zero": 485,
+        "0_to_1k": 45,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 9,
+        "7500_to_10k": 6,
+        "above_10k": 42
+      }
+    },
+    {
+      "date": "2026-02-20",
+      "generated_at": "2026-02-20T16:29:38.150628+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 485,
+      "under_threshold_count": 557,
+      "buckets": {
+        "zero": 485,
+        "0_to_1k": 44,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 9,
+        "7500_to_10k": 6,
+        "above_10k": 43
+      }
+    },
+    {
+      "date": "2026-02-23",
+      "generated_at": "2026-02-23T08:34:59.963036+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 488,
+      "under_threshold_count": 560,
+      "buckets": {
+        "zero": 488,
+        "0_to_1k": 46,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 7,
+        "7500_to_10k": 6,
+        "above_10k": 40
+      }
+    },
+    {
+      "date": "2026-02-24",
+      "generated_at": "2026-02-24T13:07:54.935565+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 489,
+      "under_threshold_count": 560,
+      "buckets": {
+        "zero": 489,
+        "0_to_1k": 45,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 7,
+        "7500_to_10k": 6,
+        "above_10k": 40
+      }
+    },
+    {
+      "date": "2026-02-26",
+      "generated_at": "2026-02-26T11:54:16.154803+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 475,
+      "under_threshold_count": 558,
+      "buckets": {
+        "zero": 475,
+        "0_to_1k": 58,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 7,
+        "7500_to_10k": 5,
+        "above_10k": 42
+      }
+    },
+    {
+      "date": "2026-02-28",
+      "generated_at": "2026-02-28T13:39:59.217016+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 477,
+      "under_threshold_count": 559,
+      "buckets": {
+        "zero": 477,
+        "0_to_1k": 57,
+        "1k_to_2500": 9,
+        "2500_to_5k": 4,
+        "5k_to_7500": 7,
+        "7500_to_10k": 5,
+        "above_10k": 41
+      }
+    },
+    {
+      "date": "2026-03-01",
+      "generated_at": "2026-03-01T06:38:07.229005+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 462,
+      "under_threshold_count": 545,
+      "buckets": {
+        "zero": 462,
+        "0_to_1k": 56,
+        "1k_to_2500": 10,
+        "2500_to_5k": 5,
+        "5k_to_7500": 7,
+        "7500_to_10k": 5,
+        "above_10k": 55
+      }
+    },
+    {
+      "date": "2026-03-02",
+      "generated_at": "2026-03-02T06:47:39.628048+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 453,
+      "under_threshold_count": 536,
+      "buckets": {
+        "zero": 453,
+        "0_to_1k": 56,
+        "1k_to_2500": 10,
+        "2500_to_5k": 5,
+        "5k_to_7500": 7,
+        "7500_to_10k": 5,
+        "above_10k": 64
+      }
+    },
+    {
+      "date": "2026-03-03",
+      "generated_at": "2026-03-03T06:40:18.890874+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 438,
+      "under_threshold_count": 521,
+      "buckets": {
+        "zero": 438,
+        "0_to_1k": 56,
+        "1k_to_2500": 9,
+        "2500_to_5k": 5,
+        "5k_to_7500": 7,
+        "7500_to_10k": 6,
+        "above_10k": 79
+      }
+    }
+  ]
+}

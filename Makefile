@@ -1,7 +1,7 @@
 VENV := $(HOME)/venv
 PYTHON := $(VENV)/bin/python
 
-.PHONY: all polkadot kusama selfstake election selfstake-polkadot selfstake-kusama election-polkadot election-kusama serve clean
+.PHONY: all polkadot kusama selfstake election selfstake-polkadot selfstake-kusama election-polkadot election-kusama extract-history serve clean
 
 all: polkadot
 
@@ -24,6 +24,9 @@ election-polkadot:
 
 election-kusama:
 	$(PYTHON) polkadot_election_prediction.py --chain kusama
+
+extract-history:
+	$(PYTHON) extract_selfstake_history.py
 
 serve:
 	$(PYTHON) -m http.server 8000

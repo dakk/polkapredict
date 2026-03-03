@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PolkaPredict — Validator Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #1a1a2e;
@@ -250,6 +251,10 @@
   }
 
   /* Buckets */
+  .buckets-card canvas {
+    max-height: 280px;
+  }
+
   .buckets-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -392,6 +397,18 @@
   <div class="tab-content active" id="tab-selfstake">
     <div id="selfstake-error"></div>
     <div class="stats" id="selfstake-stats"></div>
+    <div id="selfstake-trends" style="display:none;">
+      <div class="section-title">Historical Trends</div>
+      <div class="buckets-card">
+        <div class="buckets-title">Zero Self-Stake & Under Threshold Validators</div>
+        <canvas id="chart-trend"></canvas>
+      </div>
+      <div class="buckets-card" style="margin-top:16px;">
+        <div class="buckets-title">Stake Distribution Over Time</div>
+        <canvas id="chart-buckets-history"></canvas>
+      </div>
+    </div>
+
     <div id="selfstake-buckets"></div>
 
     <div class="section-title">Zero Self-Stake Validators</div>
@@ -717,6 +734,100 @@ function fmtBucketVal(v) {
   return v % 1 === 0 ? v.toString() : v.toFixed(1);
 }
 
+// ── Trend Charts ──────────────────────────────────────────────────
+
+let trendChart = null;
+let bucketsHistChart = null;
+
+function renderTrendCharts(historyData, info) {
+  const container = document.getElementById('selfstake-trends');
+  if (!historyData || !historyData.data || historyData.data.length < 2) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+
+  const labels = historyData.data.map(d => d.date);
+  const zeroData = historyData.data.map(d => d.zero_selfstake_count);
+  const underData = historyData.data.map(d => d.under_threshold_count);
+
+  if (trendChart) trendChart.destroy();
+  if (bucketsHistChart) bucketsHistChart.destroy();
+
+  // Chart 1: Dual-line trend
+  const trendCtx = document.getElementById('chart-trend').getContext('2d');
+  trendChart = new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Zero Self-Stake',
+          data: zeroData,
+          borderColor: '#f87171',
+          backgroundColor: 'rgba(248,113,113,0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'Under ' + (info.threshold || '10k') + ' ' + (info.token || 'DOT'),
+          data: underData,
+          borderColor: '#fbbf24',
+          backgroundColor: 'rgba(251,191,36,0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#8892a4' } },
+        tooltip: { mode: 'index', intersect: false },
+      },
+      scales: {
+        x: { ticks: { color: '#8892a4' }, grid: { color: '#2a2a4a' } },
+        y: { ticks: { color: '#8892a4' }, grid: { color: '#2a2a4a' }, beginAtZero: false },
+      },
+    },
+  });
+
+  // Chart 2: Stacked area (bucket distribution over time)
+  const bucketKeys = ['zero', '0_to_1k', '1k_to_2500', '2500_to_5k', '5k_to_7500', '7500_to_10k', 'above_10k'];
+  const bucketLabels = ['0', '0-1k', '1k-2.5k', '2.5k-5k', '5k-7.5k', '7.5k-10k', '>=10k'];
+  const bucketColors = ['#f87171', '#fbbf24', '#f59e0b', '#d97706', '#b45309', '#92400e', '#4ade80'];
+
+  const bucketDatasets = bucketKeys.map((key, i) => ({
+    label: bucketLabels[i],
+    data: historyData.data.map(d => d.buckets ? (d.buckets[key] || 0) : 0),
+    backgroundColor: bucketColors[i] + '99',
+    borderColor: bucketColors[i],
+    borderWidth: 1,
+    fill: true,
+  }));
+
+  const bucketsCtx = document.getElementById('chart-buckets-history').getContext('2d');
+  bucketsHistChart = new Chart(bucketsCtx, {
+    type: 'line',
+    data: { labels, datasets: bucketDatasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#8892a4', font: { size: 11 } } },
+        tooltip: { mode: 'index', intersect: false },
+      },
+      scales: {
+        x: { ticks: { color: '#8892a4' }, grid: { color: '#2a2a4a' } },
+        y: { stacked: true, ticks: { color: '#8892a4' }, grid: { color: '#2a2a4a' } },
+      },
+    },
+  });
+}
+
 // ── Data Loading ───────────────────────────────────────────────────
 
 async function loadData() {
@@ -736,6 +847,7 @@ async function loadData() {
   document.getElementById('election-stats').innerHTML = '';
   document.getElementById('selfstake-stats').innerHTML = '';
   document.getElementById('selfstake-buckets').innerHTML = '';
+  document.getElementById('selfstake-trends').style.display = 'none';
   document.getElementById('updated-election').textContent = '';
   document.getElementById('updated-selfstake').textContent = '';
   document.querySelectorAll('table tbody').forEach(tb => tb.innerHTML = '');
@@ -801,6 +913,17 @@ async function loadData() {
     `;
 
     renderBuckets(selfstakeData, info);
+
+    // Load historical trend data
+    try {
+      const histResp = await fetch(`data/${chain}/selfstake_history.json`, { cache: 'no-store' });
+      if (histResp.ok) {
+        const historyData = await histResp.json();
+        renderTrendCharts(historyData, info);
+      }
+    } catch (e) {
+      console.log('No history data available:', e);
+    }
 
     tables.zero.rows = selfstakeData.zero_selfstake.map((v, i) => ({
       idx: i + 1, name: v.name, address: v.address,
