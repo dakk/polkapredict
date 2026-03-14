@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-03-13T06:41:43.721012+00:00",
+  "generated_at": "2026-03-14T06:36:42.097719+00:00",
   "chain": "polkadot",
   "token": "DOT",
   "threshold": 10000,
   "active_era": null,
   "total_active_validators": 600,
-  "zero_selfstake_count": 419,
-  "under_threshold_count": 465,
+  "zero_selfstake_count": 415,
+  "under_threshold_count": 459,
   "zero_selfstake": [
     {
       "name": "BINANCE_STAKE_9",
@@ -254,11 +254,6 @@
       "self_stake_dot": 0.0
     },
     {
-      "name": "1bGdz115LsLx7WoiRyVg...",
-      "address": "1bGdz115LsLx7WoiRyVgmjkF1aVukFf2ZQ3gwKtjTHs8HQ7",
-      "self_stake_dot": 0.0
-    },
-    {
       "name": "1bgdDX9swFpiQxxu5VyF...",
       "address": "1bgdDX9swFpiQxxu5VyF2EzgepTRYfLo9vPKRNKa2LZ62KW",
       "self_stake_dot": 0.0
@@ -321,11 +316,6 @@
     {
       "name": "1mtmZm1RLhZdxMKjMDy2...",
       "address": "1mtmZm1RLhZdxMKjMDy2VSMmZLHDYEKaj2Z3maJ5x8EWqu2",
-      "self_stake_dot": 0.0
-    },
-    {
-      "name": "1ngMQVEqj9Dm1RNUxAQT...",
-      "address": "1ngMQVEqj9Dm1RNUxAQTNeBwePyKq8rXcM5x3bT2KqgFZ5n",
       "self_stake_dot": 0.0
     },
     {
@@ -676,11 +666,6 @@
     {
       "name": "SAXEMBERG:SAXEMBERG 3",
       "address": "12ryLNrg44r7Qv7oWZa2wK6PuzUmAMueyVHRBsyR5N6anEaV",
-      "self_stake_dot": 0.0
-    },
-    {
-      "name": "12sPUJXupNoFLRVuQJBp...",
-      "address": "12sPUJXupNoFLRVuQJBppu9fmaRo5n2VDdKSyACoEYNYNnvi",
       "self_stake_dot": 0.0
     },
     {
@@ -1094,11 +1079,6 @@
       "self_stake_dot": 0.0
     },
     {
-      "name": "141FXbEYs6vTwjN82h8z...",
-      "address": "141FXbEYs6vTwjN82h8zD8JGDNZW1qqgTt8KphUB1FqWG3BQ",
-      "self_stake_dot": 0.0
-    },
-    {
       "name": "141NH4UNM8n2FTXw1i54...",
       "address": "141NH4UNM8n2FTXw1i54PrYnuWtvdg7nTsfvZnbMDu4EW5H7",
       "self_stake_dot": 0.0
@@ -1446,11 +1426,6 @@
     {
       "name": "157uG3dxLhejwEY1huP2...",
       "address": "157uG3dxLhejwEY1huP2njDEp6MUKuM5YcEhVSMmHrX15jzS",
-      "self_stake_dot": 0.0
-    },
-    {
-      "name": "157wUw3289QR7E2bMnVU...",
-      "address": "157wUw3289QR7E2bMnVUxzwMYQX69S14kuYWARVYs4d8YEdt",
       "self_stake_dot": 0.0
     },
     {
@@ -1856,6 +1831,11 @@
     {
       "name": "163AJJfUjzonWiSqmGD7...",
       "address": "163AJJfUjzonWiSqmGD71iZBPv9Q4VTbjgm6K6NTv9Fvd42p",
+      "self_stake_dot": 0.0
+    },
+    {
+      "name": "164nz4vJEvNGH8ujptuk...",
+      "address": "164nz4vJEvNGH8ujptukVzNQXEep9Smx6icLcWGZKvTnohVs",
       "self_stake_dot": 0.0
     },
     {
@@ -2371,11 +2351,6 @@
       "self_stake_dot": 0.0
     },
     {
-      "name": "1bGdz115LsLx7WoiRyVg...",
-      "address": "1bGdz115LsLx7WoiRyVgmjkF1aVukFf2ZQ3gwKtjTHs8HQ7",
-      "self_stake_dot": 0.0
-    },
-    {
       "name": "1bgdDX9swFpiQxxu5VyF...",
       "address": "1bgdDX9swFpiQxxu5VyF2EzgepTRYfLo9vPKRNKa2LZ62KW",
       "self_stake_dot": 0.0
@@ -2453,11 +2428,6 @@
     {
       "name": "1mtmZm1RLhZdxMKjMDy2...",
       "address": "1mtmZm1RLhZdxMKjMDy2VSMmZLHDYEKaj2Z3maJ5x8EWqu2",
-      "self_stake_dot": 0.0
-    },
-    {
-      "name": "1ngMQVEqj9Dm1RNUxAQT...",
-      "address": "1ngMQVEqj9Dm1RNUxAQTNeBwePyKq8rXcM5x3bT2KqgFZ5n",
       "self_stake_dot": 0.0
     },
     {
@@ -2696,11 +2666,6 @@
       "self_stake_dot": 0.0
     },
     {
-      "name": "\ud83d\ude82 Zugian Duck \ud83e\udd86:V4",
-      "address": "12TxPQBN99gGwn4g9HRKCjndrnCSv3SuRaCHstk3qmoQuS9L",
-      "self_stake_dot": 9608.95
-    },
-    {
       "name": "12UKciN33b5Thw4aiMxh...",
       "address": "12UKciN33b5Thw4aiMxhewRNmWWH6vQPmaUtHC5ta1SBt6VZ",
       "self_stake_dot": 0.0
@@ -2868,11 +2833,6 @@
     {
       "name": "SAXEMBERG:SAXEMBERG 3",
       "address": "12ryLNrg44r7Qv7oWZa2wK6PuzUmAMueyVHRBsyR5N6anEaV",
-      "self_stake_dot": 0.0
-    },
-    {
-      "name": "12sPUJXupNoFLRVuQJBp...",
-      "address": "12sPUJXupNoFLRVuQJBppu9fmaRo5n2VDdKSyACoEYNYNnvi",
       "self_stake_dot": 0.0
     },
     {
@@ -3203,7 +3163,7 @@
     {
       "name": "Pier Two ",
       "address": "13jHcLP59Btr8hTFaa7jVdgYWPCNNdPqibC4gUWyocXY3kcx",
-      "self_stake_dot": 1608.85
+      "self_stake_dot": 1627.74
     },
     {
       "name": "\ud83d\udc11 HODL.FARM \ud83d\udc11:B",
@@ -3258,7 +3218,7 @@
     {
       "name": "DOZENODES.COM:3",
       "address": "13uBxESEQZ63cKu4LtLNdHX7CYkokh5iiJryJSA2A2AZenJQ",
-      "self_stake_dot": 1058.36
+      "self_stake_dot": 1058.66
     },
     {
       "name": "P2P.ORG:13",
@@ -3298,11 +3258,6 @@
     {
       "name": "1413DEcy31nBpzFN5XZe...",
       "address": "1413DEcy31nBpzFN5XZeHv6i4iDECDkFs6pRcjp8H9fqSx98",
-      "self_stake_dot": 0.0
-    },
-    {
-      "name": "141FXbEYs6vTwjN82h8z...",
-      "address": "141FXbEYs6vTwjN82h8zD8JGDNZW1qqgTt8KphUB1FqWG3BQ",
       "self_stake_dot": 0.0
     },
     {
@@ -3403,7 +3358,7 @@
     {
       "name": "locozoo:neko",
       "address": "14SvpNr394ZedPfXMkNm87HvTBJWCdrW7C5Cb1J9LSP4s27p",
-      "self_stake_dot": 8893.92
+      "self_stake_dot": 8896.53
     },
     {
       "name": "14TNj9i4BpHWoFjLEifT...",
@@ -3549,11 +3504,6 @@
       "name": "14mub2yVK2D1JHKBC1sV...",
       "address": "14mub2yVK2D1JHKBC1sVtapfpFS3hawSLfHzTkKhwYMgPDCZ",
       "self_stake_dot": 0.0
-    },
-    {
-      "name": "EXNESS.COM:4",
-      "address": "14oRE62MB1SWR6h5RTx3GY5HK2oZipi1Gp3zdiLwVYLfEyRZ",
-      "self_stake_dot": 9990.0
     },
     {
       "name": "14quk7PGMUjpsRJa66rH...",
@@ -3728,11 +3678,6 @@
     {
       "name": "157uG3dxLhejwEY1huP2...",
       "address": "157uG3dxLhejwEY1huP2njDEp6MUKuM5YcEhVSMmHrX15jzS",
-      "self_stake_dot": 0.0
-    },
-    {
-      "name": "157wUw3289QR7E2bMnVU...",
-      "address": "157wUw3289QR7E2bMnVUxzwMYQX69S14kuYWARVYs4d8YEdt",
       "self_stake_dot": 0.0
     },
     {
@@ -4166,6 +4111,11 @@
       "self_stake_dot": 0.0
     },
     {
+      "name": "164nz4vJEvNGH8ujptuk...",
+      "address": "164nz4vJEvNGH8ujptukVzNQXEep9Smx6icLcWGZKvTnohVs",
+      "self_stake_dot": 0.0
+    },
+    {
       "name": "Kraken01",
       "address": "1653t723BHhC2krGCFKUUNDQb5sUafy5pZvKVwnwo1oMAMi7",
       "self_stake_dot": 0.0
@@ -4431,7 +4381,7 @@
       "self_stake_dot": 0.0
     }
   ],
-  "above_threshold_count": 135,
+  "above_threshold_count": 141,
   "above_threshold": [
     {
       "name": "111B8CxcmnWbuDLyGvgU...",
@@ -4466,7 +4416,7 @@
     {
       "name": "ROTKO.NET:dot01",
       "address": "1ArdZJtNUrZsfidfn1t69xHaSWwzf6PQNdLEUpcnVmbkZc5",
-      "self_stake_dot": 10096.13
+      "self_stake_dot": 10103.01
     },
     {
       "name": "1CZdvokFgBMfU2Fjv2tE...",
@@ -4486,7 +4436,7 @@
     {
       "name": "helixstreet.foundation:2",
       "address": "1HMQVknF2rGz2vBegqA9jU4NhZKQtW7nZTDQykgeSm8FgPa",
-      "self_stake_dot": 10909.96
+      "self_stake_dot": 10917.61
     },
     {
       "name": "pos.dog:22",
@@ -4516,7 +4466,12 @@
     {
       "name": "talisman.xyz:2",
       "address": "1ZyhbSPMDMMuveHErhmd4XR4YK7r23E1kwn1RQzhp2EnSme",
-      "self_stake_dot": 10669.34
+      "self_stake_dot": 10696.25
+    },
+    {
+      "name": "1bGdz115LsLx7WoiRyVg...",
+      "address": "1bGdz115LsLx7WoiRyVgmjkF1aVukFf2ZQ3gwKtjTHs8HQ7",
+      "self_stake_dot": 10000.0
     },
     {
       "name": "1brNvj8Y6pYTKQGitEHb...",
@@ -4542,6 +4497,11 @@
       "name": "Jaco:v03",
       "address": "1jqkeJhuoRudNTVL5dV1qZf8RQtyzcf6ZT4yyvUQbKFktr8",
       "self_stake_dot": 10000.0
+    },
+    {
+      "name": "1ngMQVEqj9Dm1RNUxAQT...",
+      "address": "1ngMQVEqj9Dm1RNUxAQTNeBwePyKq8rXcM5x3bT2KqgFZ5n",
+      "self_stake_dot": 10001.0
     },
     {
       "name": "pos.dog:33",
@@ -4631,7 +4591,7 @@
     {
       "name": "turboflakes.io:RAIDEN",
       "address": "12gPFmRqnsDhc9C5DuXyXBFA23io5fSGtKTSAimQtAWgueD2",
-      "self_stake_dot": 10419.88
+      "self_stake_dot": 10427.7
     },
     {
       "name": "12gandRebSiGHsyYyePT...",
@@ -4751,7 +4711,7 @@
     {
       "name": "talisman.xyz:1",
       "address": "13qsqBRWCaH12UsuKuaLuvW9M29FRjfxtZMmMMZLLi9JmyZc",
-      "self_stake_dot": 10734.51
+      "self_stake_dot": 10760.61
     },
     {
       "name": "ParaNodes.io:03\ud83d\ude80",
@@ -4764,6 +4724,11 @@
       "self_stake_dot": 10101.0
     },
     {
+      "name": "141FXbEYs6vTwjN82h8z...",
+      "address": "141FXbEYs6vTwjN82h8zD8JGDNZW1qqgTt8KphUB1FqWG3BQ",
+      "self_stake_dot": 10001.0
+    },
+    {
       "name": "Khastor:K1",
       "address": "1429tQ2RK8xCwiVYYw7YVUFGX2rbASQN2maMExay7x18neoZ",
       "self_stake_dot": 16000.34
@@ -4771,7 +4736,7 @@
     {
       "name": "turboflakes.io:GALEN",
       "address": "145QiuMq8w1vBVXfwDVFxUSchdRZ6W1tTGb1uZ45TcoUskRC",
-      "self_stake_dot": 11656.82
+      "self_stake_dot": 11674.72
     },
     {
       "name": "Jaco:v05",
@@ -4796,12 +4761,12 @@
     {
       "name": "GATOTECH:UK2",
       "address": "14KHzXAZ5admFLXdgbEGpSjCGxiePniHRDM6t5r4o8kbYV7P",
-      "self_stake_dot": 11909.01
+      "self_stake_dot": 11921.86
     },
     {
       "name": "WDMASTER",
       "address": "14PkBX3BUF71wDh44BLeNby2u7X9ZBu36V28LMcBrdK35yC2",
-      "self_stake_dot": 15721.25
+      "self_stake_dot": 15725.8
     },
     {
       "name": "pos.dog:39",
@@ -4851,7 +4816,7 @@
     {
       "name": "Stakeworld.io:01",
       "address": "14kpNbU4XjEHfYdqp95Gq3NkBWbgFd6J8Yjd2SneWNzvf1Yp",
-      "self_stake_dot": 10277.71
+      "self_stake_dot": 10295.32
     },
     {
       "name": "pos.dog:40",
@@ -4874,6 +4839,11 @@
       "self_stake_dot": 10101.0
     },
     {
+      "name": "157wUw3289QR7E2bMnVU...",
+      "address": "157wUw3289QR7E2bMnVUxzwMYQX69S14kuYWARVYs4d8YEdt",
+      "self_stake_dot": 10001.0
+    },
+    {
       "name": "LEGEND:4",
       "address": "15B3UVXPRp3yS2gU7GogS41mwoT2fTL1KaNYPF7eMVjjWZJJ",
       "self_stake_dot": 10012.62
@@ -4881,12 +4851,12 @@
     {
       "name": "COSMOON",
       "address": "15CosmEmAfQAhnxwan18e5TueAe6bDzrqqxg13dToDWr7A8M",
-      "self_stake_dot": 11242.02
+      "self_stake_dot": 11268.81
     },
     {
       "name": "talisman.xyz:3",
       "address": "15DJ6BzNKGYKtScD77hC1NEWe6iybp89A96kchPtkWyFWXLg",
-      "self_stake_dot": 10654.05
+      "self_stake_dot": 10681.14
     },
     {
       "name": "pos.dog:35",
@@ -4956,12 +4926,12 @@
     {
       "name": "Staker Space:4",
       "address": "15i7KZA28F82jCfHubQ22RptEJypTZsbnSSobjU9KUnxUvdW",
-      "self_stake_dot": 10563.53
+      "self_stake_dot": 10580.93
     },
     {
       "name": "GATOTECH:UK1",
       "address": "15iA5hpjUecWBbf38Nfegwmtyux25o3LrGaNodfZDxq5nXXE",
-      "self_stake_dot": 11890.47
+      "self_stake_dot": 11903.51
     },
     {
       "name": "ANAMIX",
@@ -5026,7 +4996,7 @@
     {
       "name": "turboflakes.io:GOKUN",
       "address": "16BEvxYpyRWPaFbtwCPzSCtHVKr1soViaobKojNWBH12U5dk",
-      "self_stake_dot": 11610.25
+      "self_stake_dot": 11627.96
     },
     {
       "name": "Sio34",
@@ -5036,6 +5006,11 @@
     {
       "name": "16DswM6QWrqvtH8CTxhv...",
       "address": "16DswM6QWrqvtH8CTxhv9j5EWdkLkvzQucL3woJbLLrFZ9wa",
+      "self_stake_dot": 10000.0
+    },
+    {
+      "name": "16FCnkkUy8TaNgCQWttY...",
+      "address": "16FCnkkUy8TaNgCQWttYyqAC1KEUCDdeUf4gs8xyAQMmXXvn",
       "self_stake_dot": 10000.0
     },
     {
@@ -5074,9 +5049,14 @@
       "self_stake_dot": 10000.0
     },
     {
+      "name": "Khastor:DN2",
+      "address": "16TnLArANi5Y4SmQbGjW8V8XV1NBbjPr7AzwUsrHjBoERXTp",
+      "self_stake_dot": 10000.0
+    },
+    {
       "name": "1% - GTSTAKING",
       "address": "16YwUZyLdeAoe4KmhivGwuuJpBH1US4qkUtXK2V83MVXUy6x",
-      "self_stake_dot": 10007.93
+      "self_stake_dot": 10013.97
     },
     {
       "name": "pos.dog:29",
