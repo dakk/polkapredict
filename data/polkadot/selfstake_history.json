@@ -1010,6 +1010,22 @@
         "5k_to_7500": 2,
         "7500_to_10k": 3
       }
+    },
+    {
+      "date": "2026-04-24",
+      "generated_at": "2026-04-24T07:52:08.919573+00:00",
+      "total_active_validators": 600,
+      "zero_selfstake_count": 215,
+      "under_threshold_count": 243,
+      "buckets": {
+        "zero": 215,
+        "above_10k": 357,
+        "0_to_1k": 18,
+        "1k_to_2500": 4,
+        "2500_to_5k": 1,
+        "5k_to_7500": 2,
+        "7500_to_10k": 3
+      }
     }
   ]
 }
