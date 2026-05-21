@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-20T08:55:10.407276+00:00",
+  "generated_at": "2026-05-21T08:58:57.875516+00:00",
   "chain": "polkadot",
   "token": "DOT",
   "threshold": 10000,
@@ -1348,7 +1348,7 @@
     {
       "name": "ULTRAOPS:COLUMBUS",
       "address": "12oGAxBz5HgrVBaE5VS1tbUCFdwf7PLkbqXdiJ9b4cvc8J4n",
-      "self_stake_dot": 1197.48
+      "self_stake_dot": 1217.63
     },
     {
       "name": "12pVRQpqU9vja9MnmLRv...",
@@ -2231,7 +2231,7 @@
     {
       "name": "helixstreet.foundation:2",
       "address": "1HMQVknF2rGz2vBegqA9jU4NhZKQtW7nZTDQykgeSm8FgPa",
-      "self_stake_dot": 23925.3
+      "self_stake_dot": 23949.91
     },
     {
       "name": "1HNsJJmREFbcTG8ER9qq...",
@@ -2346,7 +2346,7 @@
     {
       "name": "talisman.xyz:2",
       "address": "1ZyhbSPMDMMuveHErhmd4XR4YK7r23E1kwn1RQzhp2EnSme",
-      "self_stake_dot": 12028.45
+      "self_stake_dot": 12051.94
     },
     {
       "name": "1afJZTC93WLb5BaqaKJ6...",
@@ -2656,7 +2656,7 @@
     {
       "name": "turboflakes.io:RAIDEN",
       "address": "12gPFmRqnsDhc9C5DuXyXBFA23io5fSGtKTSAimQtAWgueD2",
-      "self_stake_dot": 11595.96
+      "self_stake_dot": 11620.12
     },
     {
       "name": "12gandRebSiGHsyYyePT...",
@@ -2991,7 +2991,7 @@
     {
       "name": "Pier Two ",
       "address": "13jHcLP59Btr8hTFaa7jVdgYWPCNNdPqibC4gUWyocXY3kcx",
-      "self_stake_dot": 11848.87
+      "self_stake_dot": 11872.16
     },
     {
       "name": "digitalghost.xyz:dot02",
@@ -3031,7 +3031,7 @@
     {
       "name": "talisman.xyz:1",
       "address": "13qsqBRWCaH12UsuKuaLuvW9M29FRjfxtZMmMMZLLi9JmyZc",
-      "self_stake_dot": 12090.79
+      "self_stake_dot": 12113.4
     },
     {
       "name": "13rQrbXFkJP9bYygYof7...",
@@ -3051,7 +3051,7 @@
     {
       "name": "DOZENODES.COM:3",
       "address": "13uBxESEQZ63cKu4LtLNdHX7CYkokh5iiJryJSA2A2AZenJQ",
-      "self_stake_dot": 11047.3
+      "self_stake_dot": 11070.56
     },
     {
       "name": "P2P.ORG:13",
@@ -3121,7 +3121,7 @@
     {
       "name": "turboflakes.io:GALEN",
       "address": "145QiuMq8w1vBVXfwDVFxUSchdRZ6W1tTGb1uZ45TcoUskRC",
-      "self_stake_dot": 12954.38
+      "self_stake_dot": 12978.39
     },
     {
       "name": "P2P.ORG:37",
@@ -3186,7 +3186,7 @@
     {
       "name": "GATOTECH:UK2",
       "address": "14KHzXAZ5admFLXdgbEGpSjCGxiePniHRDM6t5r4o8kbYV7P",
-      "self_stake_dot": 13109.9
+      "self_stake_dot": 13133.42
     },
     {
       "name": "14M3gytuMxbNG2ff8v4i...",
@@ -3211,7 +3211,7 @@
     {
       "name": "WDMASTER",
       "address": "14PkBX3BUF71wDh44BLeNby2u7X9ZBu36V28LMcBrdK35yC2",
-      "self_stake_dot": 16861.4
+      "self_stake_dot": 16885.23
     },
     {
       "name": "P2P.ORG",
@@ -3346,7 +3346,7 @@
     {
       "name": "Stakeworld.io:01",
       "address": "14kpNbU4XjEHfYdqp95Gq3NkBWbgFd6J8Yjd2SneWNzvf1Yp",
-      "self_stake_dot": 11565.66
+      "self_stake_dot": 11589.9
     },
     {
       "name": "pos.dog:40",
@@ -3486,7 +3486,7 @@
     {
       "name": "talisman.xyz:3",
       "address": "15DJ6BzNKGYKtScD77hC1NEWe6iybp89A96kchPtkWyFWXLg",
-      "self_stake_dot": 12042.18
+      "self_stake_dot": 12065.53
     },
     {
       "name": "pos.dog:35",
@@ -3646,7 +3646,7 @@
     {
       "name": "GATOTECH:UK1",
       "address": "15iA5hpjUecWBbf38Nfegwmtyux25o3LrGaNodfZDxq5nXXE",
-      "self_stake_dot": 13124.54
+      "self_stake_dot": 13148.67
     },
     {
       "name": "15kbZvGmTVpXhxPryRu5...",
@@ -3806,7 +3806,7 @@
     {
       "name": "turboflakes.io:GOKUN",
       "address": "16BEvxYpyRWPaFbtwCPzSCtHVKr1soViaobKojNWBH12U5dk",
-      "self_stake_dot": 12906.73
+      "self_stake_dot": 12930.51
     },
     {
       "name": "16CHpvTPc1iJ6HwGRYPx...",
@@ -3951,7 +3951,7 @@
     {
       "name": "1% - GTSTAKING",
       "address": "16YwUZyLdeAoe4KmhivGwuuJpBH1US4qkUtXK2V83MVXUy6x",
-      "self_stake_dot": 10729.25
+      "self_stake_dot": 10752.26
     },
     {
       "name": "pos.dog:29",
