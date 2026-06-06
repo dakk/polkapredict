@@ -10,34 +10,70 @@ from substrateinterface import SubstrateInterface
 
 CHAIN_CONFIG = {
     "polkadot": {
-        "relay_rpc": "wss://rpc.ibp.network/polkadot",
-        "asset_hub_rpc": "wss://sys.ibp.network/asset-hub-polkadot",
-        "people_rpc": "wss://sys.ibp.network/people-polkadot",
+        "relay_rpcs": [
+            "wss://rpc.ibp.network/polkadot",
+            "wss://polkadot-rpc.dwellir.com",
+            "wss://polkadot.api.onfinality.io/public-ws",
+        ],
+        "asset_hub_rpcs": [
+            "wss://sys.ibp.network/asset-hub-polkadot",
+            "wss://polkadot-asset-hub-rpc.polkadot.io",
+            "wss://asset-hub-polkadot.api.onfinality.io/public-ws",
+        ],
+        "people_rpcs": [
+            "wss://sys.ibp.network/people-polkadot",
+            "wss://polkadot-people-rpc.polkadot.io",
+        ],
         "decimals": 10_000_000_000,  # 1 DOT = 10^10 planck
         "token": "DOT",
         "threshold": 10_000,
     },
     "kusama": {
-        "relay_rpc": "wss://rpc.ibp.network/kusama",
-        "asset_hub_rpc": "wss://sys.ibp.network/asset-hub-kusama",
-        "people_rpc": "wss://sys.ibp.network/people-kusama",
+        "relay_rpcs": [
+            "wss://rpc.ibp.network/kusama",
+            "wss://kusama-rpc.dwellir.com",
+            "wss://kusama.api.onfinality.io/public-ws",
+        ],
+        "asset_hub_rpcs": [
+            "wss://sys.ibp.network/asset-hub-kusama",
+            "wss://kusama-asset-hub-rpc.polkadot.io",
+            "wss://asset-hub-kusama.api.onfinality.io/public-ws",
+        ],
+        "people_rpcs": [
+            "wss://sys.ibp.network/people-kusama",
+            "wss://kusama-people-rpc.polkadot.io",
+        ],
         "decimals": 1_000_000_000_000,  # 1 KSM = 10^12 planck
         "token": "KSM",
         "threshold": 10,
     },
 }
 
-RELAY_RPC = CHAIN_CONFIG["polkadot"]["relay_rpc"]
-ASSET_HUB_RPC = CHAIN_CONFIG["polkadot"]["asset_hub_rpc"]
-PEOPLE_RPC = CHAIN_CONFIG["polkadot"]["people_rpc"]
+RELAY_RPCS = CHAIN_CONFIG["polkadot"]["relay_rpcs"]
+ASSET_HUB_RPCS = CHAIN_CONFIG["polkadot"]["asset_hub_rpcs"]
+PEOPLE_RPCS = CHAIN_CONFIG["polkadot"]["people_rpcs"]
 DOT_DECIMALS = CHAIN_CONFIG["polkadot"]["decimals"]
 TOKEN = CHAIN_CONFIG["polkadot"]["token"]
 THRESHOLD_AMOUNT = CHAIN_CONFIG["polkadot"]["threshold"]
 
 
+def connect(rpcs):
+    """Try each RPC endpoint in order, return the first that connects."""
+    last_exc = None
+    for url in rpcs:
+        try:
+            substrate = SubstrateInterface(url=url)
+            print(f"  Connected to {url}")
+            return substrate
+        except Exception as exc:
+            print(f"  {url} unavailable: {exc}")
+            last_exc = exc
+    raise ConnectionError(f"All RPC endpoints failed. Last error: {last_exc}")
+
+
 def get_active_validators():
     """Get active validator set from relay chain Session::Validators."""
-    substrate = SubstrateInterface(url=RELAY_RPC)
+    substrate = connect(RELAY_RPCS)
     result = substrate.query("Session", "Validators")
     validators = [str(v) for v in result.value]
     substrate.close()
@@ -46,7 +82,7 @@ def get_active_validators():
 
 def get_staking_overview(active_set):
     """Get self-stake from Asset Hub ErasStakersOverview for the active era."""
-    substrate = SubstrateInterface(url=ASSET_HUB_RPC)
+    substrate = connect(ASSET_HUB_RPCS)
     active_era = substrate.query("Staking", "ActiveEra")
     era_index = active_era.value["index"]
     print(f"Active era: {era_index}")
@@ -73,7 +109,7 @@ def get_staking_overview(active_set):
 
 def get_identities(addresses):
     """Get display names from People chain Identity::IdentityOf."""
-    substrate = SubstrateInterface(url=PEOPLE_RPC)
+    substrate = connect(PEOPLE_RPCS)
     names = {}
     for addr in addresses:
         try:
@@ -189,7 +225,7 @@ def update_history(result, chain):
 
 
 def main():
-    global RELAY_RPC, ASSET_HUB_RPC, PEOPLE_RPC, DOT_DECIMALS, TOKEN, THRESHOLD_AMOUNT
+    global RELAY_RPCS, ASSET_HUB_RPCS, PEOPLE_RPCS, DOT_DECIMALS, TOKEN, THRESHOLD_AMOUNT
 
     parser = argparse.ArgumentParser(
         description="Count active validators with zero self-stake"
@@ -204,9 +240,9 @@ def main():
     args = parser.parse_args()
 
     chain_cfg = CHAIN_CONFIG[args.chain]
-    RELAY_RPC = chain_cfg["relay_rpc"]
-    ASSET_HUB_RPC = chain_cfg["asset_hub_rpc"]
-    PEOPLE_RPC = chain_cfg["people_rpc"]
+    RELAY_RPCS = chain_cfg["relay_rpcs"]
+    ASSET_HUB_RPCS = chain_cfg["asset_hub_rpcs"]
+    PEOPLE_RPCS = chain_cfg["people_rpcs"]
     DOT_DECIMALS = chain_cfg["decimals"]
     TOKEN = chain_cfg["token"]
     THRESHOLD_AMOUNT = chain_cfg["threshold"]
