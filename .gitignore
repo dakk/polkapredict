@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+
+# IDEs
+.idea/
+.vscode/
+
+# Claude Code
+.claude/
+.mcp.json

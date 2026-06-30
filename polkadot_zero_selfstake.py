@@ -6,67 +6,21 @@ import json
 import os
 from datetime import datetime, timezone
 
-from substrateinterface import SubstrateInterface
+from polkadot_common import (
+    CHAIN_CONFIG,
+    IDENTITY_CACHE_TTL_DAYS,
+    connect,
+    fetch_identity,
+    load_identity_cache,
+    save_identity_cache,
+)
 
-CHAIN_CONFIG = {
-    "polkadot": {
-        "relay_rpcs": [
-            "wss://polkadot.api.onfinality.io/public-ws",
-            "wss://rpc.ibp.network/polkadot",
-        ],
-        "asset_hub_rpcs": [
-            "wss://polkadot-asset-hub-rpc.polkadot.io",
-            "wss://statemint.api.onfinality.io/public-ws",
-            "wss://sys.ibp.network/asset-hub-polkadot",
-        ],
-        "people_rpcs": [
-            "wss://polkadot-people-rpc.polkadot.io",
-            "wss://sys.ibp.network/people-polkadot",
-        ],
-        "decimals": 10_000_000_000,  # 1 DOT = 10^10 planck
-        "token": "DOT",
-        "threshold": 10_000,
-    },
-    "kusama": {
-        "relay_rpcs": [
-            "wss://kusama.api.onfinality.io/public-ws",
-            "wss://rpc.ibp.network/kusama",
-        ],
-        "asset_hub_rpcs": [
-            "wss://kusama-asset-hub-rpc.polkadot.io",
-            "wss://sys.ibp.network/asset-hub-kusama",
-        ],
-        "people_rpcs": [
-            "wss://kusama-people-rpc.polkadot.io",
-            "wss://sys.ibp.network/people-kusama",
-        ],
-        "decimals": 1_000_000_000_000,  # 1 KSM = 10^12 planck
-        "token": "KSM",
-        "threshold": 10,
-    },
-}
-
-IDENTITY_CACHE_TTL_DAYS = 28
 RELAY_RPCS = CHAIN_CONFIG["polkadot"]["relay_rpcs"]
 ASSET_HUB_RPCS = CHAIN_CONFIG["polkadot"]["asset_hub_rpcs"]
 PEOPLE_RPCS = CHAIN_CONFIG["polkadot"]["people_rpcs"]
 DOT_DECIMALS = CHAIN_CONFIG["polkadot"]["decimals"]
 TOKEN = CHAIN_CONFIG["polkadot"]["token"]
 THRESHOLD_AMOUNT = CHAIN_CONFIG["polkadot"]["threshold"]
-
-
-def connect(rpcs):
-    """Try each RPC endpoint in order, return the first that connects."""
-    last_exc = None
-    for url in rpcs:
-        try:
-            substrate = SubstrateInterface(url=url)
-            print(f"  Connected to {url}")
-            return substrate
-        except Exception as exc:
-            print(f"  {url} unavailable: {exc}")
-            last_exc = exc
-    raise ConnectionError(f"All RPC endpoints failed. Last error: {last_exc}")
 
 
 def get_active_validators():
@@ -95,7 +49,6 @@ def get_staking_overview(active_set):
 
     substrate.close()
 
-    # Return only active validators
     overview = {}
     for addr in active_set:
         if addr in stakers:
@@ -105,59 +58,9 @@ def get_staking_overview(active_set):
     return overview
 
 
-
-
-def _cache_path(chain):
-    return os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "data", chain, "identity_cache.json",
-    )
-
-
-def _load_cache(chain):
-    path = _cache_path(chain)
-    if os.path.exists(path):
-        with open(path) as f:
-            return json.load(f)
-    return {}
-
-
-def _save_cache(chain, cache):
-    path = _cache_path(chain)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:
-        json.dump(cache, f, indent=2)
-
-
-def _fetch_identity(substrate, addr):
-    try:
-        result = substrate.query("Identity", "IdentityOf", params=[addr])
-        if result.value:
-            raw = result.value["info"].get("display", {}).get("Raw")
-            if raw:
-                return raw
-    except Exception:
-        pass
-    try:
-        result = substrate.query("Identity", "SuperOf", params=[addr])
-        if result.value:
-            parent_addr, sub_data = result.value
-            parent_addr = str(parent_addr)
-            sub_name = sub_data.get("Raw", "")
-            parent_result = substrate.query("Identity", "IdentityOf", params=[parent_addr])
-            if parent_result.value:
-                parent_display = (
-                    parent_result.value["info"].get("display", {}).get("Raw", "")
-                )
-                return f"{parent_display}:{sub_name}"
-    except Exception:
-        pass
-    return addr[:20] + "..."
-
-
 def get_identities(addresses, chain):
-    """Get display names from People chain, using a local cache with 7-day TTL."""
-    cache = _load_cache(chain)
+    """Get display names from People chain, using a shared cache with TTL."""
+    cache = load_identity_cache(chain)
     now = datetime.now(timezone.utc)
     ttl_seconds = IDENTITY_CACHE_TTL_DAYS * 86400
 
@@ -171,10 +74,10 @@ def get_identities(addresses, chain):
         print(f"  Fetching {len(stale)} identities from chain ({len(addresses) - len(stale)} cached)...")
         substrate = connect(PEOPLE_RPCS)
         for addr in stale:
-            name = _fetch_identity(substrate, addr)
+            name = fetch_identity(substrate, addr)
             cache[addr] = {"name": name, "cached_at": now.isoformat()}
         substrate.close()
-        _save_cache(chain, cache)
+        save_identity_cache(chain, cache)
     else:
         print(f"  All {len(addresses)} identities served from cache.")
 
@@ -244,7 +147,6 @@ def update_history(result, chain):
         ),
     }
 
-    # Replace existing entry for same date, or append
     replaced = False
     for i, existing in enumerate(history["data"]):
         if existing["date"] == date:
@@ -330,7 +232,6 @@ def main():
     for i, (name, address, dot) in enumerate(non_zero_under, 1):
         print(f"  {i:3d}. {name:<40s} {dot:>12,.2f} {TOKEN}  {address}")
 
-    # Write JSON output
     output_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "data", args.chain, "selfstake.json"
     )

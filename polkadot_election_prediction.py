@@ -24,30 +24,18 @@ import os
 from collections import defaultdict
 from datetime import datetime, timezone
 
+from polkadot_common import (
+    CHAIN_CONFIG,
+    IDENTITY_CACHE_TTL_DAYS,
+    load_identity_cache,
+    save_identity_cache,
+)
+
 # ── Configuration ───────────────────────────────────────────────────────
 
-CHAIN_CONFIG = {
-    "polkadot": {
-        "api_base": "https://polkadot.api.subscan.io",
-        "rpc": "wss://polkadot-asset-hub-rpc.polkadot.io",
-        "people_rpc": "wss://polkadot-people-rpc.polkadot.io",
-        "decimals": 10_000_000_000,  # 1 DOT = 10^10 planck
-        "token": "DOT",
-        "seats": 300,
-    },
-    "kusama": {
-        "api_base": "https://kusama.api.subscan.io",
-        "rpc": "wss://kusama-asset-hub-rpc.polkadot.io",
-        "people_rpc": "wss://kusama-people-rpc.polkadot.io",
-        "decimals": 1_000_000_000_000,  # 1 KSM = 10^12 planck
-        "token": "KSM",
-        "seats": 1000,
-    },
-}
-
 API_BASE = CHAIN_CONFIG["polkadot"]["api_base"]
-ASSET_HUB_RPC = CHAIN_CONFIG["polkadot"]["rpc"]
-PEOPLE_RPC = CHAIN_CONFIG["polkadot"]["people_rpc"]
+ASSET_HUB_RPCS = CHAIN_CONFIG["polkadot"]["asset_hub_rpcs"]
+PEOPLE_RPCS = CHAIN_CONFIG["polkadot"]["people_rpcs"]
 DOT_DECIMALS = CHAIN_CONFIG["polkadot"]["decimals"]
 TOKEN = CHAIN_CONFIG["polkadot"]["token"]
 DEFAULT_SEATS = CHAIN_CONFIG["polkadot"]["seats"]
@@ -302,29 +290,52 @@ def get_validator_name(validator):
 
 # ── RPC Data Fetching (Asset Hub) ─────────────────────────────────────
 
-def _rpc_connect(rpc_url):
-    """Create a SubstrateInterface connection and initialize runtime."""
+def _rpc_connect(rpc_urls):
+    """Try each RPC endpoint in order; retry on 429 before moving to next."""
     from substrateinterface import SubstrateInterface
+    from websocket import WebSocketBadStatusException
 
-    substrate = SubstrateInterface(url=rpc_url, auto_discover=False)
-    head = substrate.rpc_request("chain_getHead", [])["result"]
-    substrate.init_runtime(block_hash=head)
-    return substrate, head
+    urls = [rpc_urls] if isinstance(rpc_urls, str) else rpc_urls
+    last_exc = None
+    for url in urls:
+        for attempt in range(3):
+            try:
+                substrate = SubstrateInterface(url=url, auto_discover=False)
+                head = substrate.rpc_request("chain_getHead", [])["result"]
+                substrate.init_runtime(block_hash=head)
+                print(f"  Connected to {url}")
+                return substrate, head
+            except WebSocketBadStatusException as e:
+                if "429" in str(e) and attempt < 2:
+                    wait = 10 * (attempt + 1)
+                    print(f"  {url} rate-limited (429), retrying in {wait}s...")
+                    time.sleep(wait)
+                    last_exc = e
+                else:
+                    print(f"  {url} unavailable: {e}")
+                    last_exc = e
+                    break
+            except Exception as e:
+                print(f"  {url} unavailable: {e}")
+                last_exc = e
+                break
+    raise ConnectionError(f"All RPC endpoints failed. Last error: {last_exc}")
 
 
-def _rpc_query_map_with_retry(rpc_url, head, pallet, storage, params=None,
+def _rpc_query_map_with_retry(rpc_urls, head, pallet, storage, params=None,
                                max_retries=3, retry_delay=5):
     """Run query_map with automatic reconnect on connection errors.
 
     Yields (key, value) pairs. If the connection drops mid-iteration,
-    reconnects and restarts from the beginning (skipping already-seen keys).
+    reconnects (trying fallback URLs) and restarts from the beginning
+    (skipping already-seen keys).
     """
+    from websocket import WebSocketBadStatusException
+
     seen_keys = {}  # key -> value, preserves results across retries
     for attempt in range(max_retries):
         try:
-            from substrateinterface import SubstrateInterface
-
-            substrate = SubstrateInterface(url=rpc_url, auto_discover=False)
+            substrate, _ = _rpc_connect(rpc_urls)
             substrate.init_runtime(block_hash=head)
             call_params = params or []
             result = substrate.query_map(
@@ -1068,14 +1079,27 @@ def fetch_validator_names():
     return names, active, waiting
 
 
-def fetch_identities_people_chain(people_rpc_url):
-    """Fetch all on-chain identities from the People parachain via RPC.
+def fetch_identities_people_chain(people_rpc_urls, chain):
+    """Fetch all on-chain identities, using a shared cache with 28-day TTL.
 
-    Queries Identity.IdentityOf for direct identities and Identity.SuperOf
-    for sub-identities. Returns dict of address -> display_name.
+    On a cache hit the People chain is not contacted at all. On a miss, bulk-fetches
+    via query_map (faster than per-address queries) and saves to
+    data/{chain}/identity_cache.json, which is also read by polkadot_zero_selfstake.py.
     """
     print("[1/3] Fetching identities from People chain...")
-    substrate, head = _rpc_connect(people_rpc_url)
+    cache = load_identity_cache(chain)
+    now = datetime.now(timezone.utc)
+    ttl_seconds = IDENTITY_CACHE_TTL_DAYS * 86400
+
+    last_refresh = cache.get("_last_refresh", {}).get("cached_at")
+    if last_refresh:
+        age = (now - datetime.fromisoformat(last_refresh)).total_seconds()
+        if age < ttl_seconds:
+            identities = {addr: v["name"] for addr, v in cache.items() if addr != "_last_refresh"}
+            print(f"  {len(identities)} identities served from cache (last refresh {age/3600:.1f}h ago).")
+            return identities
+
+    substrate, head = _rpc_connect(people_rpc_urls)
     substrate.close()
 
     # Fetch all direct identities
@@ -1084,7 +1108,7 @@ def fetch_identities_people_chain(people_rpc_url):
     count = 0
     start = time.time()
     for account, identity in _rpc_query_map_with_retry(
-        people_rpc_url, head, "Identity", "IdentityOf"
+        people_rpc_urls, head, "Identity", "IdentityOf"
     ):
         info = identity.value.get("info", {})
         display = info.get("display", {})
@@ -1097,12 +1121,12 @@ def fetch_identities_people_chain(people_rpc_url):
     elapsed = time.time() - start
     print(f"    {count} identities fetched in {elapsed:.0f}s")
 
-    # Fetch all sub-identities (maps child address -> parent address + sub name)
+    # Fetch all sub-identities
     print("  Fetching sub-identities...")
     count = 0
     start = time.time()
     for account, super_info in _rpc_query_map_with_retry(
-        people_rpc_url, head, "Identity", "SuperOf"
+        people_rpc_urls, head, "Identity", "SuperOf"
     ):
         parent_addr, sub_data = super_info.value
         parent_name = identities.get(parent_addr, "")
@@ -1119,11 +1143,17 @@ def fetch_identities_people_chain(people_rpc_url):
     print(f"    {count} sub-identities fetched in {elapsed:.0f}s")
     print(f"  Total named accounts: {len(identities)}")
 
+    now_iso = now.isoformat()
+    new_cache = {addr: {"name": name, "cached_at": now_iso} for addr, name in identities.items()}
+    new_cache["_last_refresh"] = {"cached_at": now_iso}
+    save_identity_cache(chain, new_cache)
+    print(f"  Identity cache updated ({len(identities)} entries).")
+
     return identities
 
 
 def main():
-    global API_BASE, ASSET_HUB_RPC, PEOPLE_RPC, DOT_DECIMALS, TOKEN, DEFAULT_SEATS
+    global API_BASE, ASSET_HUB_RPCS, PEOPLE_RPCS, DOT_DECIMALS, TOKEN, DEFAULT_SEATS
 
     parser = argparse.ArgumentParser(
         description="NPoS validator election prediction"
@@ -1182,8 +1212,8 @@ def main():
     # Apply chain config
     chain_cfg = CHAIN_CONFIG[args.chain]
     API_BASE = chain_cfg["api_base"]
-    ASSET_HUB_RPC = args.rpc or chain_cfg["rpc"]
-    PEOPLE_RPC = chain_cfg["people_rpc"]
+    ASSET_HUB_RPCS = [args.rpc] if args.rpc else chain_cfg["asset_hub_rpcs"]
+    PEOPLE_RPCS = chain_cfg["people_rpcs"]
     DOT_DECIMALS = chain_cfg["decimals"]
     TOKEN = chain_cfg["token"]
     DEFAULT_SEATS = args.seats or chain_cfg["seats"]
@@ -1241,14 +1271,14 @@ def main():
             display_results(elected, validator_info, active_addresses, num_to_elect)
     else:
         # ── RPC mode (default, faster) ──
-        validator_names = fetch_identities_people_chain(PEOPLE_RPC)
+        validator_names = fetch_identities_people_chain(PEOPLE_RPCS, config["chain"])
 
         if args.address:
             print(f"\n    Mode: Single validator lookup (RPC)")
-            lookup_single_rpc(args.address, validator_names, ASSET_HUB_RPC)
+            lookup_single_rpc(args.address, validator_names, ASSET_HUB_RPCS)
         else:
             print(f"\n    Mode: Full ranking via Asset Hub RPC")
-            validator_info = build_ranking_rpc(validator_names, ASSET_HUB_RPC)
+            validator_info = build_ranking_rpc(validator_names, ASSET_HUB_RPCS)
             display_ranking(validator_info)
             write_election_json(validator_info, "rpc")
 
