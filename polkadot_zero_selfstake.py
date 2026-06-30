@@ -11,18 +11,17 @@ from substrateinterface import SubstrateInterface
 CHAIN_CONFIG = {
     "polkadot": {
         "relay_rpcs": [
-            "wss://rpc.ibp.network/polkadot",
-            "wss://polkadot-rpc.dwellir.com",
             "wss://polkadot.api.onfinality.io/public-ws",
+            "wss://rpc.ibp.network/polkadot",
         ],
         "asset_hub_rpcs": [
-            "wss://sys.ibp.network/asset-hub-polkadot",
             "wss://polkadot-asset-hub-rpc.polkadot.io",
-            "wss://asset-hub-polkadot.api.onfinality.io/public-ws",
+            "wss://statemint.api.onfinality.io/public-ws",
+            "wss://sys.ibp.network/asset-hub-polkadot",
         ],
         "people_rpcs": [
-            "wss://sys.ibp.network/people-polkadot",
             "wss://polkadot-people-rpc.polkadot.io",
+            "wss://sys.ibp.network/people-polkadot",
         ],
         "decimals": 10_000_000_000,  # 1 DOT = 10^10 planck
         "token": "DOT",
@@ -30,18 +29,16 @@ CHAIN_CONFIG = {
     },
     "kusama": {
         "relay_rpcs": [
-            "wss://rpc.ibp.network/kusama",
-            "wss://kusama-rpc.dwellir.com",
             "wss://kusama.api.onfinality.io/public-ws",
+            "wss://rpc.ibp.network/kusama",
         ],
         "asset_hub_rpcs": [
-            "wss://sys.ibp.network/asset-hub-kusama",
             "wss://kusama-asset-hub-rpc.polkadot.io",
-            "wss://asset-hub-kusama.api.onfinality.io/public-ws",
+            "wss://sys.ibp.network/asset-hub-kusama",
         ],
         "people_rpcs": [
-            "wss://sys.ibp.network/people-kusama",
             "wss://kusama-people-rpc.polkadot.io",
+            "wss://sys.ibp.network/people-kusama",
         ],
         "decimals": 1_000_000_000_000,  # 1 KSM = 10^12 planck
         "token": "KSM",
@@ -49,6 +46,7 @@ CHAIN_CONFIG = {
     },
 }
 
+IDENTITY_CACHE_TTL_DAYS = 28
 RELAY_RPCS = CHAIN_CONFIG["polkadot"]["relay_rpcs"]
 ASSET_HUB_RPCS = CHAIN_CONFIG["polkadot"]["asset_hub_rpcs"]
 PEOPLE_RPCS = CHAIN_CONFIG["polkadot"]["people_rpcs"]
@@ -107,43 +105,80 @@ def get_staking_overview(active_set):
     return overview
 
 
-def get_identities(addresses):
-    """Get display names from People chain Identity::IdentityOf."""
-    substrate = connect(PEOPLE_RPCS)
-    names = {}
-    for addr in addresses:
-        try:
-            result = substrate.query("Identity", "IdentityOf", params=[addr])
-            if result.value:
-                info = result.value["info"]
-                display = info.get("display", {})
-                raw = display.get("Raw")
-                if raw:
-                    names[addr] = raw
-                    continue
-        except Exception:
-            pass
-        # Check if it's a sub-identity
-        try:
-            result = substrate.query("Identity", "SuperOf", params=[addr])
-            if result.value:
-                parent_addr, sub_data = result.value
-                parent_addr = str(parent_addr)
-                sub_name = sub_data.get("Raw", "")
-                parent_result = substrate.query(
-                    "Identity", "IdentityOf", params=[parent_addr]
+
+
+def _cache_path(chain):
+    return os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "data", chain, "identity_cache.json",
+    )
+
+
+def _load_cache(chain):
+    path = _cache_path(chain)
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    return {}
+
+
+def _save_cache(chain, cache):
+    path = _cache_path(chain)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(cache, f, indent=2)
+
+
+def _fetch_identity(substrate, addr):
+    try:
+        result = substrate.query("Identity", "IdentityOf", params=[addr])
+        if result.value:
+            raw = result.value["info"].get("display", {}).get("Raw")
+            if raw:
+                return raw
+    except Exception:
+        pass
+    try:
+        result = substrate.query("Identity", "SuperOf", params=[addr])
+        if result.value:
+            parent_addr, sub_data = result.value
+            parent_addr = str(parent_addr)
+            sub_name = sub_data.get("Raw", "")
+            parent_result = substrate.query("Identity", "IdentityOf", params=[parent_addr])
+            if parent_result.value:
+                parent_display = (
+                    parent_result.value["info"].get("display", {}).get("Raw", "")
                 )
-                if parent_result.value:
-                    parent_display = (
-                        parent_result.value["info"].get("display", {}).get("Raw", "")
-                    )
-                    names[addr] = f"{parent_display}:{sub_name}"
-                    continue
-        except Exception:
-            pass
-        names[addr] = addr[:20] + "..."
-    substrate.close()
-    return names
+                return f"{parent_display}:{sub_name}"
+    except Exception:
+        pass
+    return addr[:20] + "..."
+
+
+def get_identities(addresses, chain):
+    """Get display names from People chain, using a local cache with 7-day TTL."""
+    cache = _load_cache(chain)
+    now = datetime.now(timezone.utc)
+    ttl_seconds = IDENTITY_CACHE_TTL_DAYS * 86400
+
+    stale = [
+        addr for addr in addresses
+        if addr not in cache
+        or (now - datetime.fromisoformat(cache[addr]["cached_at"])).total_seconds() > ttl_seconds
+    ]
+
+    if stale:
+        print(f"  Fetching {len(stale)} identities from chain ({len(addresses) - len(stale)} cached)...")
+        substrate = connect(PEOPLE_RPCS)
+        for addr in stale:
+            name = _fetch_identity(substrate, addr)
+            cache[addr] = {"name": name, "cached_at": now.isoformat()}
+        substrate.close()
+        _save_cache(chain, cache)
+    else:
+        print(f"  All {len(addresses)} identities served from cache.")
+
+    return {addr: cache[addr]["name"] for addr in addresses}
 
 
 def compute_history_buckets(under_list, total, under_count, threshold):
@@ -256,7 +291,7 @@ def main():
     overview = get_staking_overview(active_set)
 
     print("Fetching identities from People chain...")
-    names = get_identities(active_set)
+    names = get_identities(active_set, args.chain)
 
     THRESHOLD = THRESHOLD_AMOUNT * DOT_DECIMALS
 
